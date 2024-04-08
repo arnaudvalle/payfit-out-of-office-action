@@ -1,0 +1,21 @@
+{
+  "engines": {
+    "node": ">=21"
+  },
+  "name": "payfit-out-of-office-action",
+  "version": "0.0.1",
+  "description": "Payfit out-of-office GitHub Action",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "node --env-file=.env --watch -r ts-node/register src/index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "arnaudvalle",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^20.12.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.3"
+  }
+}
