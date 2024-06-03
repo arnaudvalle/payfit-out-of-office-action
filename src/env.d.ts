@@ -1,7 +1,7 @@
 declare global {
   namespace NodeJS {
     interface ProcessEnv {
-      CALENDAR_URL: string;
+      CALENDAR_URL?: string;
     }
   }
 }
