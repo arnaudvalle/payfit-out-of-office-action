@@ -18,11 +18,25 @@ import { VEvent, async as icalAsync } from "node-ical";
       return;
     }
 
-    const employees = ["Firstname Lastname"];
+    const employees = ["Firstname LASTNAME"];
 
-    const employeesEvents = events.filter(
-      ({ summary }) => summary === `Absence - ${employees[0]}`,
-    );
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const today = now.getTime();
+
+    const employeesEvents = events.filter(({ summary, start, end }) => {
+      // Only keep the events of the selected employees that start or end today
+      if (
+        summary === `Absence - ${employees[0]}` &&
+        (start.getTime() === today || end.getTime() === today)
+      ) {
+        return true;
+      }
+
+      return false;
+    });
+
+    console.log("All events", employeesEvents.length);
   } catch (err: unknown) {
     console.log(err);
 
