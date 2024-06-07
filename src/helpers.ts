@@ -1,5 +1,7 @@
+import { CalendarComponent, VEvent } from "node-ical";
+
 /**
- * Get the list of employee names passed to the script
+ * Get the list of employee names passed to the script.
  */
 export const getEmployeeNames = () => {
   // The first two args are node & path to script so skip them
@@ -17,4 +19,36 @@ export const getEmployeeNames = () => {
   }
 
   return namesArgValue.split("=")[1].split(",");
+};
+
+/**
+ * Filter all the events for the given employees for today.
+ */
+export const getEventsForEmployees = (
+  events: CalendarComponent[],
+  employeeNames: string[],
+) => {
+  // We can ignore VTimeZone and VCalendar for now
+  const vevents = events.filter(
+    (component): component is VEvent => component.type === "VEVENT",
+  );
+
+  // Don't bother going any further if there aren't any actual events
+  if (vevents.length === 0) {
+    throw new Error("No events found");
+  }
+
+  const today = new Date().setHours(0, 0, 0, 0);
+
+  return vevents.filter(({ summary, start, end }) => {
+    // Only keep the events of the selected employees that start or end today
+    if (
+      summary === `Absence - ${employeeNames[0]}` &&
+      (start.getTime() === today || end.getTime() === today)
+    ) {
+      return true;
+    }
+
+    return false;
+  });
 };
