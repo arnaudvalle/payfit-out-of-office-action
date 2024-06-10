@@ -35,15 +35,23 @@ export const getEventsForEmployees = (
 
   // Don't bother going any further if there aren't any actual events
   if (vevents.length === 0) {
-    throw new Error("No events found");
+    console.info("No events found");
+    return [];
   }
 
+  console.info(
+    `Found a total of ${vevents.length} events in the provided ical`,
+  );
+
+  const allowedSummaries = employeeNames.map(
+    (fullname) => `Absence - ${fullname}`,
+  );
   const today = new Date().setHours(0, 0, 0, 0);
 
   return vevents.filter(({ summary, start, end }) => {
     // Only keep the events of the selected employees that start or end today
     if (
-      summary === `Absence - ${employeeNames[0]}` &&
+      allowedSummaries.includes(summary) &&
       (start.getTime() === today || end.getTime() === today)
     ) {
       return true;
