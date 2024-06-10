@@ -35,14 +35,13 @@ export const getEventsForEmployees = (
 
   // Don't bother going any further if there aren't any actual events
   if (vevents.length === 0) {
-    console.info("No events found");
+    console.info("No events found in ical");
     return [];
   }
 
-  console.info(
-    `Found a total of ${vevents.length} events in the provided ical`,
-  );
+  console.info(`Found a total of ${vevents.length} events in ical`);
 
+  // All events summary seem to be made up of this prefix + fullname 🤷
   const allowedSummaries = employeeNames.map(
     (fullname) => `Absence - ${fullname}`,
   );
@@ -59,4 +58,17 @@ export const getEventsForEmployees = (
 
     return false;
   });
+};
+
+/**
+ * Get a list of unique employees names based on a given list of events.
+ */
+export const getEmployeesFromEvents = (employeeEvents: VEvent[]) => {
+  // Highly unlikely but we may have 2 events on the same day for the same person
+  // (1 half-day in the morning and another in the afternoon)
+  const uniqueEventNames = [
+    ...new Set(employeeEvents.map(({ summary }) => summary)),
+  ];
+
+  return uniqueEventNames.map((summary) => summary.replace("Absence - ", ""));
 };

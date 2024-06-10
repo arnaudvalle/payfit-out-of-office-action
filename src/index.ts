@@ -1,5 +1,9 @@
 import { async as icalAsync } from "node-ical";
-import { getEmployeeNames, getEventsForEmployees } from "./helpers";
+import {
+  getEmployeeNames,
+  getEmployeesFromEvents,
+  getEventsForEmployees,
+} from "./helpers";
 
 (async () => {
   try {
@@ -11,15 +15,18 @@ import { getEmployeeNames, getEventsForEmployees } from "./helpers";
 
     const names = getEmployeeNames();
 
+    console.info(`Looking for events for ${names.length} employees`);
+
     const employeeEvents = getEventsForEmployees(
       Object.values(response),
       names,
     );
 
-    console.log(
-      "All events",
-      employeeEvents.map(({ summary }) => summary),
-    );
+    const outOfOfficeEmployees = getEmployeesFromEvents(employeeEvents);
+
+    console.info(`${outOfOfficeEmployees.length} employees are off today`);
+
+    return outOfOfficeEmployees;
   } catch (err: unknown) {
     console.log(err);
 
