@@ -1,4 +1,4 @@
-import { async as icalAsync } from "node-ical";
+import { async as icalAsync, sync as icalSync } from "node-ical";
 import {
   getEmployeeNames,
   getEmployeesFromEvents,
@@ -11,7 +11,10 @@ import {
       throw new Error("CALENDAR_URL is missing");
     }
 
-    const response = await icalAsync.fromURL(process.env.CALENDAR_URL);
+    const response =
+      process.env.NODE_ENV === "test"
+        ? icalSync.parseFile("example-calendar.ics")
+        : await icalAsync.fromURL(process.env.CALENDAR_URL);
 
     const names = getEmployeeNames();
 
