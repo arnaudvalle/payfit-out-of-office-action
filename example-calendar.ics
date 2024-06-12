@@ -1,0 +1,56 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:PayFit
+BEGIN:VEVENT
+SUMMARY:Absence - Geralt OF RIVIA
+DTSTART;VALUE=DATE:20240610
+DTEND;VALUE=DATE:20240610
+DESCRIPTION:\n\nCet événement a été importé depuis votre calendrier PayFit.
+ \n\nPour consulter l'ensemble de vos congés ou y apporter des modifications
+ \, rendez-vous sur : https://app.payfit.com/absences\n\nSachez que les modi
+ fications apportées dans votre application PayFit seront automatiquement mi
+ ses à jour ici dans les 24 heures.\n\nNote : En tant que manager ou représe
+ ntant RH\, vous pouvez consulter les congés de vos employés en vous rendant
+  sur la page dédié à l'employé en question ou dans l'espace de validation d
+ e demandes.
+END:VEVENT
+BEGIN:VEVENT
+SUMMARY:Absence - Ciri OF CINTRA
+DTSTART;VALUE=DATE:20240610
+DTEND;VALUE=DATE:20240610
+DESCRIPTION:\n\nCet événement a été importé depuis votre calendrier PayFit.
+ \n\nPour consulter l'ensemble de vos congés ou y apporter des modifications
+ \, rendez-vous sur : https://app.payfit.com/absences\n\nSachez que les modi
+ fications apportées dans votre application PayFit seront automatiquement mi
+ ses à jour ici dans les 24 heures.\n\nNote : En tant que manager ou représe
+ ntant RH\, vous pouvez consulter les congés de vos employés en vous rendant
+  sur la page dédié à l'employé en question ou dans l'espace de validation d
+ e demandes.
+END:VEVENT
+BEGIN:VEVENT
+SUMMARY:Absence - Yennefer OF VENGERBERG
+DTSTART;VALUE=DATE:20240502
+DTEND;VALUE=DATE:20240504
+DESCRIPTION:\n\nCet événement a été importé depuis votre calendrier PayFit.
+ \n\nPour consulter l'ensemble de vos congés ou y apporter des modifications
+ \, rendez-vous sur : https://app.payfit.com/absences\n\nSachez que les modi
+ fications apportées dans votre application PayFit seront automatiquement mi
+ ses à jour ici dans les 24 heures.\n\nNote : En tant que manager ou représe
+ ntant RH\, vous pouvez consulter les congés de vos employés en vous rendant
+  sur la page dédié à l'employé en question ou dans l'espace de validation d
+ e demandes.
+END:VEVENT
+BEGIN:VEVENT
+SUMMARY:Absence - Jaskier DANDELION
+DTSTART;VALUE=DATE:20240612
+DTEND;VALUE=DATE:20240615
+DESCRIPTION:\n\nCet événement a été importé depuis votre calendrier PayFit.
+ \n\nPour consulter l'ensemble de vos congés ou y apporter des modifications
+ \, rendez-vous sur : https://app.payfit.com/absences\n\nSachez que les modi
+ fications apportées dans votre application PayFit seront automatiquement mi
+ ses à jour ici dans les 24 heures.\n\nNote : En tant que manager ou représe
+ ntant RH\, vous pouvez consulter les congés de vos employés en vous rendant
+  sur la page dédié à l'employé en question ou dans l'espace de validation d
+ e demandes.
+END:VEVENT
+END:VCALENDAR
