@@ -28,7 +28,7 @@ import { getEmployeesFromEvents, getEventsForEmployees } from "./helpers";
     const outOfOfficeEmployees = getEmployeesFromEvents(employeeEvents);
 
     // Set outputs for other workflow steps to use
-    core.setOutput("names", outOfOfficeEmployees.join(","));
+    core.setOutput("names", outOfOfficeEmployees);
   } catch (err: unknown) {
     // Fail the workflow run if an error occurs
     if (err instanceof Error) {
