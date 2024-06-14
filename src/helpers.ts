@@ -1,6 +1,8 @@
 import { CalendarComponent, VEvent } from "node-ical";
 import * as core from "@actions/core";
 
+const PREFIX = "Absence - ";
+
 /**
  * Filter all the events for the given employees for today.
  */
@@ -26,7 +28,7 @@ export const getEventsForEmployees = (
 
   // All events summary seem to be made up of this prefix + fullname 🤷
   const allowedSummaries = employeeNames.map(
-    (fullname) => `Absence - ${fullname}`,
+    (fullname) => `${PREFIX}${fullname}`,
   );
   const today = new Date().setHours(0, 0, 0, 0);
 
@@ -54,7 +56,7 @@ export const getEmployeesFromEvents = (employeeEvents: VEvent[]) => {
   ];
 
   const outOfOfficeEmployees = uniqueEventNames.map((summary) =>
-    summary.replace("Absence - ", ""),
+    summary.replace(PREFIX, ""),
   );
 
   core.info(`${outOfOfficeEmployees.length} employees are off today`);
