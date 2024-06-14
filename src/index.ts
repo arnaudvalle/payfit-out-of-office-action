@@ -1,38 +1,41 @@
 import { async as icalAsync, sync as icalSync } from "node-ical";
-import {
-  getEmployeeNames,
-  getEmployeesFromEvents,
-  getEventsForEmployees,
-} from "./helpers";
+import * as core from "@actions/core";
+import { getEmployeesFromEvents, getEventsForEmployees } from "./helpers";
 
-(async () => {
+(async (): Promise<void> => {
   try {
-    if (!process.env?.CALENDAR_URL || process.env?.CALENDAR_URL === "") {
-      throw new Error("CALENDAR_URL is missing");
+    const calendarUrl = core.getInput("calendar_url");
+    const names = core.getInput("names");
+
+    if (!calendarUrl || calendarUrl === "") {
+      core.error("calendar_url is missing");
+    }
+
+    if (!names || names === "") {
+      core.error("names is missing");
     }
 
     const response =
       process.env.NODE_ENV === "test"
         ? icalSync.parseFile("example-calendar.ics")
-        : await icalAsync.fromURL(process.env.CALENDAR_URL);
+        : await icalAsync.fromURL(calendarUrl);
 
-    const names = getEmployeeNames();
-
-    console.info(`Looking for events for ${names.length} employees`);
+    // Get the list of employee names passed to the action
+    const fullNames = names.split(",");
 
     const employeeEvents = getEventsForEmployees(
       Object.values(response),
-      names,
+      fullNames,
     );
 
     const outOfOfficeEmployees = getEmployeesFromEvents(employeeEvents);
 
-    console.info(`${outOfOfficeEmployees.length} employees are off today`);
-
-    return outOfOfficeEmployees;
+    // Set outputs for other workflow steps to use
+    core.setOutput("names", outOfOfficeEmployees.join(","));
   } catch (err: unknown) {
-    console.log(err);
-
-    process.exit(-1);
+    // Fail the workflow run if an error occurs
+    if (err instanceof Error) {
+      core.setFailed(err.message);
+    }
   }
 })();

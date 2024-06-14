@@ -1,25 +1,5 @@
 import { CalendarComponent, VEvent } from "node-ical";
-
-/**
- * Get the list of employee names passed to the script.
- */
-export const getEmployeeNames = () => {
-  // The first two args are node & path to script so skip them
-  const args = process.argv.slice(2);
-
-  // No arguments
-  if (args.length < 1) {
-    throw new Error("No arguments");
-  }
-
-  const namesArgValue = args.find((arg) => arg.startsWith("names="));
-
-  if (!namesArgValue) {
-    throw new Error('Missing "names" argument');
-  }
-
-  return namesArgValue.split("=")[1].split(",");
-};
+import * as core from "@actions/core";
 
 /**
  * Filter all the events for the given employees for today.
@@ -28,6 +8,9 @@ export const getEventsForEmployees = (
   events: CalendarComponent[],
   employeeNames: string[],
 ) => {
+  // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
+  core.info(`Looking for events for ${employeeNames.length} employees`);
+
   // We can ignore VTimeZone and VCalendar for now
   const vevents = events.filter(
     (component): component is VEvent => component.type === "VEVENT",
@@ -35,11 +18,11 @@ export const getEventsForEmployees = (
 
   // Don't bother going any further if there aren't any actual events
   if (vevents.length === 0) {
-    console.info("No events found in ical");
+    core.info("No events found in ical");
     return [];
   }
 
-  console.info(`Found a total of ${vevents.length} events in ical`);
+  core.info(`Found a total of ${vevents.length} events in ical`);
 
   // All events summary seem to be made up of this prefix + fullname 🤷
   const allowedSummaries = employeeNames.map(
@@ -70,5 +53,11 @@ export const getEmployeesFromEvents = (employeeEvents: VEvent[]) => {
     ...new Set(employeeEvents.map(({ summary }) => summary)),
   ];
 
-  return uniqueEventNames.map((summary) => summary.replace("Absence - ", ""));
+  const outOfOfficeEmployees = uniqueEventNames.map((summary) =>
+    summary.replace("Absence - ", ""),
+  );
+
+  core.info(`${outOfOfficeEmployees.length} employees are off today`);
+
+  return outOfOfficeEmployees;
 };
