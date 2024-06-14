@@ -1,0 +1,15 @@
+name: "Payfit out of office"
+description: "Determine who is out of office today"
+inputs:
+  calendar_url:
+    description: "URL to the ics file containing all leave events"
+    required: true
+  names:
+    description: "List of full names (`Firstname LASTNAME`) to check, separated by a comma"
+    required: true
+outputs:
+  names:
+    description: "List of full names that are out of office today (out of those passed in `inputs.names`)"
+runs:
+  using: "node20"
+  main: "dist/index.js"
