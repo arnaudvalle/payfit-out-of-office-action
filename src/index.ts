@@ -4,6 +4,7 @@ import { getEmployeesFromEvents, getEventsForEmployees } from "./helpers";
 
 (async (): Promise<void> => {
   try {
+    // Basic action based on https://github.com/actions/typescript-action/
     const calendarUrl = core.getInput("calendar_url", { required: true });
     const names = core.getMultilineInput("names", { required: true });
 
