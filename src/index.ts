@@ -4,14 +4,14 @@ import { getEmployeesFromEvents, getEventsForEmployees } from "./helpers";
 
 (async (): Promise<void> => {
   try {
-    const calendarUrl = core.getInput("calendar_url");
-    const names = core.getInput("names");
+    const calendarUrl = core.getInput("calendar_url", { required: true });
+    const names = core.getMultilineInput("names", { required: true });
 
     if (!calendarUrl || calendarUrl === "") {
       core.error("calendar_url is missing");
     }
 
-    if (!names || names === "") {
+    if (!names || names.length === 0) {
       core.error("names is missing");
     }
 
@@ -20,12 +20,9 @@ import { getEmployeesFromEvents, getEventsForEmployees } from "./helpers";
         ? icalSync.parseFile("example-calendar.ics")
         : await icalAsync.fromURL(calendarUrl);
 
-    // Get the list of employee names passed to the action
-    const fullNames = names.split(",");
-
     const employeeEvents = getEventsForEmployees(
       Object.values(response),
-      fullNames,
+      names,
     );
 
     const outOfOfficeEmployees = getEmployeesFromEvents(employeeEvents);
