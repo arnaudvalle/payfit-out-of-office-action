@@ -9,12 +9,19 @@
   "scripts": {
     "build": "tsc",
     "dev": "node --env-file=.env --watch -r ts-node/register src/index.ts -- names='Ciri OF CINTRA,Jaskier DANDELION'",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "format": "npx prettier --write .",
+    "package": "npx ncc build src/index.ts -o dist --source-map --license licenses.txt",
+    "bundle": "npm run format && npm run package"
+  },
+  "exports": {
+    ".": "./dist/index.js"
   },
   "author": "arnaudvalle",
   "license": "ISC",
   "devDependencies": {
     "@types/node": "^20.12.2",
+    "@vercel/ncc": "^0.38.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.3"
   },
