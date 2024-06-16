@@ -1,0 +1,34 @@
+name: Continuous Integration
+
+on:
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+jobs:
+  test-action:
+    name: GitHub Actions Test
+    runs-on: ubuntu-latest
+    env:
+      NODE_ENV: test
+    steps:
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@v4
+
+      - name: Test Local Action
+        id: test-action
+        uses: ./
+        with:
+          calendar_url: example-calendar.ics
+          names: Ciri OF CINTRA,Yennefer OF VENGERBERG
+
+      - name: Print Output
+        id: output
+        run: echo "${{ steps.test-action.outputs.names }}"

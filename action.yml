@@ -5,7 +5,7 @@ inputs:
     description: "URL to the ics file containing all leave events"
     required: true
   names:
-    description: "List of full names (`Firstname LASTNAME`) to check. One name per line."
+    description: "List of full names (`Firstname LASTNAME`) to check, separated by a comma"
     required: true
 outputs:
   names:

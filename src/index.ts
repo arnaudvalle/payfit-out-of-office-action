@@ -6,13 +6,13 @@ import { getEmployeesFromEvents, getEventsForEmployees } from "./helpers";
   try {
     // Basic action based on https://github.com/actions/typescript-action/
     const calendarUrl = core.getInput("calendar_url", { required: true });
-    const names = core.getMultilineInput("names", { required: true });
+    const names = core.getInput("names", { required: true });
 
     if (!calendarUrl || calendarUrl === "") {
       core.error("calendar_url is missing");
     }
 
-    if (!names || names.length === 0) {
+    if (!names || names === "") {
       core.error("names is missing");
     }
 
@@ -23,7 +23,7 @@ import { getEmployeesFromEvents, getEventsForEmployees } from "./helpers";
 
     const employeeEvents = getEventsForEmployees(
       Object.values(response),
-      names,
+      names.split(","),
     );
 
     const outOfOfficeEmployees = getEmployeesFromEvents(employeeEvents);

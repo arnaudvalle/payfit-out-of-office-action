@@ -12,6 +12,7 @@ export const getEventsForEmployees = (
 ) => {
   // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
   core.info(`Looking for events for ${employeeNames.length} employees`);
+  core.debug(employeeNames.join(","));
 
   // We can ignore VTimeZone and VCalendar for now
   const vevents = events.filter(
