@@ -1,4 +1,4 @@
-import { async as icalAsync, sync as icalSync } from "node-ical";
+import { VEvent, async as icalAsync, sync as icalSync } from "node-ical";
 import * as core from "@actions/core";
 import { getEmployeesFromEvents, getEventsForEmployees } from "./helpers";
 
@@ -21,10 +21,20 @@ import { getEmployeesFromEvents, getEventsForEmployees } from "./helpers";
         ? icalSync.parseFile("example-calendar.ics")
         : await icalAsync.fromURL(calendarUrl);
 
-    const employeeEvents = getEventsForEmployees(
-      Object.values(response),
-      names.split(","),
+    // We can ignore VTimeZone and VCalendar for now
+    const events = Object.values(response).filter(
+      (component): component is VEvent => component.type === "VEVENT",
     );
+
+    // Don't bother going any further if there aren't any actual events
+    if (events.length === 0) {
+      core.info("No events found in ical");
+      core.setOutput("names", []);
+    }
+
+    core.info(`Found a total of ${events.length} events in ical`);
+
+    const employeeEvents = getEventsForEmployees(events, names.split(","));
 
     const outOfOfficeEmployees = getEmployeesFromEvents(employeeEvents);
 

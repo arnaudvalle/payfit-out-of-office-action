@@ -7,24 +7,11 @@ const PREFIX = "Absence - ";
  * Filter all the events for the given employees for today.
  */
 export const getEventsForEmployees = (
-  events: CalendarComponent[],
+  events: VEvent[],
   employeeNames: string[],
 ) => {
   // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
   core.info(`Looking for events for ${employeeNames.length} employees`);
-
-  // We can ignore VTimeZone and VCalendar for now
-  const vevents = events.filter(
-    (component): component is VEvent => component.type === "VEVENT",
-  );
-
-  // Don't bother going any further if there aren't any actual events
-  if (vevents.length === 0) {
-    core.info("No events found in ical");
-    return [];
-  }
-
-  core.info(`Found a total of ${vevents.length} events in ical`);
 
   // All events summary seem to be made up of this prefix + fullname 🤷
   const allowedSummaries = employeeNames.map(
@@ -32,7 +19,7 @@ export const getEventsForEmployees = (
   );
   const today = new Date().setHours(0, 0, 0, 0);
 
-  return vevents.filter(({ summary, start, end }) => {
+  return events.filter(({ summary, start, end }) => {
     // Only keep the events of the selected employees that start or end today
     if (
       allowedSummaries.includes(summary) &&
