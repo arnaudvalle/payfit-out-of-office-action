@@ -3,7 +3,11 @@ import { getEmployeesFromEvents, getEventsForEmployees } from "../src/helpers";
 
 // Some helper to easily get parsed VEvent - this is what a parsed ICS file would return as well via node-ical
 const getMockVEvents = (
-  eventsOptions: { employee: string; isToday: boolean }[],
+  eventsOptions: {
+    employee: string;
+    startIsToday: boolean;
+    endIsToday: boolean;
+  }[],
 ) => {
   const body: string[] = [];
   /*
@@ -16,14 +20,15 @@ const getMockVEvents = (
     .slice(0, 10)
     .replace(/-/g, "");
 
-  for (const { employee, isToday } of eventsOptions) {
-    const date = isToday ? today : notToday;
+  for (const { employee, startIsToday, endIsToday } of eventsOptions) {
+    const startDate = startIsToday ? today : notToday;
+    const endDate = endIsToday ? today : notToday;
 
     body.push(`
 BEGIN:VEVENT
 SUMMARY:Absence - ${employee}
-DTSTART;VALUE=DATE:${date}
-DTEND;VALUE=DATE:${date}
+DTSTART;VALUE=DATE:${startDate}
+DTEND;VALUE=DATE:${endDate}
 DESCRIPTION:
 END:VEVENT`);
   }
@@ -36,9 +41,10 @@ describe("getEmployeesFromEvents", () => {
   it("returns a unique list of names", async () => {
     const result = getEmployeesFromEvents(
       getMockVEvents([
-        { employee: "Geralt OF RIVIA", isToday: true },
-        { employee: "Ciri OF CINTRA", isToday: true },
-        { employee: "Geralt OF RIVIA", isToday: true },
+        { employee: "Geralt OF RIVIA", startIsToday: true, endIsToday: false },
+        { employee: "Ciri OF CINTRA", startIsToday: true, endIsToday: false },
+        { employee: "Geralt OF RIVIA", startIsToday: true, endIsToday: true },
+        { employee: "Ciri OF CINTRA", startIsToday: true, endIsToday: true },
       ]),
     );
 
