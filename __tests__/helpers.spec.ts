@@ -1,22 +1,27 @@
 import { VEvent, sync as icalSync } from "node-ical";
-import { getEmployeesFromEvents } from "../src/helpers";
+import { getEmployeesFromEvents, getEventsForEmployees } from "../src/helpers";
 
 // Some helper to easily get parsed VEvent - this is what a parsed ICS file would return as well via node-ical
-const getMockVEvents = (eventsOptions: [string, boolean][]) => {
+const getMockVEvents = (
+  eventsOptions: { employee: string; isToday: boolean }[],
+) => {
   const body: string[] = [];
-  // ISO string format is YYYY-MM-DDTHH:mm.sssZ - the get rid of the hyphens and the stuff we don't care about
+  /*
+    ISO string format is YYYY-MM-DDTHH:mm.sssZ
+    Then get rid of the hyphens and the stuff we don't care about to turn it into YYYYMMDD
+  */
   const today = new Date().toISOString().slice(0, 10).replace(/-/g, "");
   const notToday = new Date(1995, 11, 17)
     .toISOString()
     .slice(0, 10)
     .replace(/-/g, "");
 
-  for (const [name, isToday] of eventsOptions) {
+  for (const { employee, isToday } of eventsOptions) {
     const date = isToday ? today : notToday;
 
     body.push(`
 BEGIN:VEVENT
-SUMMARY:Absence - ${name}
+SUMMARY:Absence - ${employee}
 DTSTART;VALUE=DATE:${date}
 DTEND;VALUE=DATE:${date}
 DESCRIPTION:
@@ -31,9 +36,9 @@ describe("getEmployeesFromEvents", () => {
   it("returns a unique list of names", async () => {
     const result = getEmployeesFromEvents(
       getMockVEvents([
-        ["Geralt OF RIVIA", true],
-        ["Ciri OF CINTRA", true],
-        ["Geralt OF RIVIA", true],
+        { employee: "Geralt OF RIVIA", isToday: true },
+        { employee: "Ciri OF CINTRA", isToday: true },
+        { employee: "Geralt OF RIVIA", isToday: true },
       ]),
     );
 
