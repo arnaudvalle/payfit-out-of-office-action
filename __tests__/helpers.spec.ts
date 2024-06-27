@@ -95,6 +95,19 @@ describe("getEventsForEmployees", () => {
     expect(result).toHaveLength(1);
     expect(result[0].summary).toContain("Ciri OF CINTRA");
   });
+
+  it("returns events that started in the past and end in the future", () => {
+    const result = getEventsForEmployees(
+      getMockVEvents([
+        { employee: "Ciri OF CINTRA", start: past, end: past },
+        { employee: "Ciri OF CINTRA", start: past, end: future },
+      ]),
+      ["Ciri OF CINTRA"],
+    );
+
+    expect(result).toHaveLength(1);
+    expect(result[0].summary).toContain("Ciri OF CINTRA");
+  });
 });
 
 describe("getEmployeesFromEvents", () => {

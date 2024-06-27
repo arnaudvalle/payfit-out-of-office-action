@@ -23,7 +23,9 @@ export const getEventsForEmployees = (
     // Only keep the events of the selected employees that start or end today
     if (
       allowedSummaries.includes(summary) &&
-      (start.getTime() === today || end.getTime() === today)
+      (start.getTime() === today ||
+        end.getTime() === today ||
+        (start.getTime() <= today && end.getTime() >= today))
     ) {
       return true;
     }
