@@ -1,5 +1,9 @@
 import { VEvent, sync as icalSync } from "node-ical";
+import * as core from "@actions/core";
 import { getEmployeesFromEvents, getEventsForEmployees } from "../src/helpers";
+
+// Mock the GitHub Actions core library
+let infoMock: jest.SpiedFunction<typeof core.info>;
 
 // Some helper to easily get parsed VEvent - this is what a parsed ICS file would return as well via node-ical
 const getMockVEvents = (
@@ -37,6 +41,12 @@ future.setDate(today.getDate() + 7);
 
 let past = new Date();
 past.setDate(today.getDate() - 7);
+
+beforeEach(() => {
+  jest.clearAllMocks();
+
+  infoMock = jest.spyOn(core, "info").mockImplementation();
+});
 
 describe("getEventsForEmployees", () => {
   it("only returns today's events for the requested employees", () => {
