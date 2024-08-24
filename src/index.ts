@@ -8,12 +8,8 @@ export async function run(): Promise<void> {
     const calendarUrl = core.getInput("calendar_url", { required: true });
     const names = core.getInput("names", { required: true });
 
-    if (!calendarUrl || calendarUrl === "") {
-      core.error("calendar_url is missing");
-    }
-
-    if (!names || names === "") {
-      core.error("names is missing");
+    if (!calendarUrl?.length || !names?.length) {
+      throw new Error("Missing calendar_url or names input");
     }
 
     const response =
