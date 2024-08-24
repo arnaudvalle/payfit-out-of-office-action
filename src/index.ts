@@ -2,7 +2,7 @@ import { VEvent, async as icalAsync, sync as icalSync } from "node-ical";
 import * as core from "@actions/core";
 import { getEmployeesFromEvents, getEventsForEmployees } from "./helpers";
 
-(async (): Promise<void> => {
+export async function run(): Promise<void> {
   try {
     // Basic action based on https://github.com/actions/typescript-action/
     const calendarUrl = core.getInput("calendar_url", { required: true });
@@ -18,7 +18,7 @@ import { getEmployeesFromEvents, getEventsForEmployees } from "./helpers";
 
     const response =
       process.env.NODE_ENV === "test"
-        ? icalSync.parseFile("example-calendar.ics")
+        ? icalSync.parseFile(calendarUrl)
         : await icalAsync.fromURL(calendarUrl);
 
     // We can ignore VTimeZone and VCalendar for now
@@ -30,6 +30,7 @@ import { getEmployeesFromEvents, getEventsForEmployees } from "./helpers";
     if (events.length === 0) {
       core.info("No events found in ical");
       core.setOutput("names", []);
+      return;
     }
 
     core.info(`Found a total of ${events.length} events in ical`);
@@ -46,4 +47,6 @@ import { getEmployeesFromEvents, getEventsForEmployees } from "./helpers";
       core.setFailed(err.message);
     }
   }
-})();
+}
+
+run();
