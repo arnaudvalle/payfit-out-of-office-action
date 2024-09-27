@@ -26,6 +26,8 @@ jobs:
         run: echo "${{ steps.check-ooo-team-a.outputs.names }}"
 ```
 
+> ⚠️ **Note:** I strongly recommend that you use [Github secrets](https://docs.github.com/en/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions) to store your `calendar_url` and `names` inputs rather than hard coding them in your workflow since these can hold sensitive information.
+
 ## Inputs
 
 ### `calendar_url`
