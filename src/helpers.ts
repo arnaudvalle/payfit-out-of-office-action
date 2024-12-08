@@ -18,14 +18,17 @@ export const getEventsForEmployees = (
     (fullname) => `${PREFIX}${fullname}`,
   );
   const today = new Date().setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today + 24 * 60 * 60 * 1000).setHours(0, 0, 0, 0);
 
   return events.filter(({ summary, start, end }) => {
     // Only keep the events of the selected employees that start or end today
+    // Note: the end date is always +1 day
+    // Ex: if I'm off only today for a full day, then the end date will be tomorrow
     if (
       allowedSummaries.includes(summary) &&
       (start.getTime() === today ||
-        end.getTime() === today ||
-        (start.getTime() <= today && end.getTime() >= today))
+        end.getTime() === tomorrow ||
+        (start.getTime() <= today && end.getTime() >= tomorrow))
     ) {
       return true;
     }
