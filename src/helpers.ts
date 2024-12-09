@@ -21,7 +21,7 @@ export const getEventsForEmployees = (
   const tomorrow = new Date(today + 24 * 60 * 60 * 1000).setHours(0, 0, 0, 0);
 
   return events.filter(({ summary, start, end }) => {
-    // Only keep the events of the selected employees that start or end today
+    // Only keep the events of the selected employees that start today or end tomorrow
     // Note: the end date is always +1 day
     // Ex: if I'm off only today for a full day, then the end date will be tomorrow
     if (

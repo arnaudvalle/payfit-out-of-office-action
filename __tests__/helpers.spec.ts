@@ -36,10 +36,16 @@ END:VEVENT`);
 
 const today = new Date();
 
-let future = new Date();
+const tomorrow = new Date();
+tomorrow.setDate(today.getDate() + 1);
+
+const future = new Date();
 future.setDate(today.getDate() + 7);
 
-let past = new Date();
+const yesterday = new Date();
+yesterday.setDate(today.getDate() - 1);
+
+const past = new Date();
 past.setDate(today.getDate() - 7);
 
 beforeEach(() => {
@@ -55,10 +61,10 @@ describe("getEventsForEmployees", () => {
         {
           employee: "Yennefer OF VENGERBERG",
           start: today,
-          end: past,
+          end: tomorrow,
         },
-        { employee: "Geralt OF RIVIA", start: today, end: past },
-        { employee: "Ciri OF CINTRA", start: today, end: past },
+        { employee: "Geralt OF RIVIA", start: today, end: tomorrow },
+        { employee: "Ciri OF CINTRA", start: today, end: tomorrow },
       ]),
       ["Ciri OF CINTRA"],
     );
@@ -70,53 +76,46 @@ describe("getEventsForEmployees", () => {
   it("returns events that start today", () => {
     const result = getEventsForEmployees(
       getMockVEvents([
-        { employee: "Ciri OF CINTRA", start: past, end: past },
-        { employee: "Ciri OF CINTRA", start: today, end: past },
-      ]),
-      ["Ciri OF CINTRA"],
-    );
-
-    expect(result).toHaveLength(1);
-    expect(result[0].summary).toContain("Ciri OF CINTRA");
-  });
-
-  it("returns events that end today", () => {
-    const result = getEventsForEmployees(
-      getMockVEvents([
-        { employee: "Ciri OF CINTRA", start: past, end: today },
-        { employee: "Ciri OF CINTRA", start: past, end: past },
-      ]),
-      ["Ciri OF CINTRA"],
-    );
-
-    expect(result).toHaveLength(1);
-    expect(result[0].summary).toContain("Ciri OF CINTRA");
-  });
-
-  it("returns events that start and end today", () => {
-    const result = getEventsForEmployees(
-      getMockVEvents([
-        { employee: "Ciri OF CINTRA", start: past, end: past },
+        { employee: "Ciri OF CINTRA", start: past, end: yesterday },
+        { employee: "Ciri OF CINTRA", start: tomorrow, end: future },
         { employee: "Ciri OF CINTRA", start: today, end: today },
+        { employee: "Ciri OF CINTRA", start: today, end: tomorrow },
+        { employee: "Ciri OF CINTRA", start: today, end: future },
       ]),
       ["Ciri OF CINTRA"],
     );
 
-    expect(result).toHaveLength(1);
-    expect(result[0].summary).toContain("Ciri OF CINTRA");
+    expect(result).toHaveLength(3);
+  });
+
+  // If it ends tomorrow, it means today is the last day of the event
+  it("returns events that end tomorrow", () => {
+    const result = getEventsForEmployees(
+      getMockVEvents([
+        { employee: "Ciri OF CINTRA", start: past, end: past },
+        { employee: "Ciri OF CINTRA", start: past, end: yesterday },
+        { employee: "Ciri OF CINTRA", start: past, end: today },
+        { employee: "Ciri OF CINTRA", start: past, end: tomorrow },
+        { employee: "Ciri OF CINTRA", start: yesterday, end: tomorrow },
+        { employee: "Ciri OF CINTRA", start: today, end: tomorrow },
+      ]),
+      ["Ciri OF CINTRA"],
+    );
+
+    expect(result).toHaveLength(3);
   });
 
   it("returns events that started in the past and end in the future", () => {
     const result = getEventsForEmployees(
       getMockVEvents([
         { employee: "Ciri OF CINTRA", start: past, end: past },
+        { employee: "Ciri OF CINTRA", start: yesterday, end: future },
         { employee: "Ciri OF CINTRA", start: past, end: future },
       ]),
       ["Ciri OF CINTRA"],
     );
 
-    expect(result).toHaveLength(1);
-    expect(result[0].summary).toContain("Ciri OF CINTRA");
+    expect(result).toHaveLength(2);
   });
 });
 
