@@ -5,6 +5,9 @@ import { getEmployeesFromEvents, getEventsForEmployees } from "../src/helpers";
 // Mock the GitHub Actions core library
 let infoMock: jest.SpiedFunction<typeof core.info>;
 
+jest.useFakeTimers();
+jest.setSystemTime(new Date('2024-04-29T00:00:00Z'));
+
 // Some helper to easily get parsed VEvent - this is what a parsed ICS file would return as well via node-ical
 const getMockVEvents = (
   eventsOptions: {
