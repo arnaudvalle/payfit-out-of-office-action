@@ -1,6 +1,6 @@
 import { VEvent, sync as icalSync } from "node-ical";
 import * as core from "@actions/core";
-import { getEmployeesFromEvents, getEventsForEmployees } from "../src/helpers";
+import { adjustEventTimesToUTC, getEmployeesFromEvents, getEventsForEmployees } from "../src/helpers";
 
 // Mock the GitHub Actions core library
 let infoMock: jest.SpiedFunction<typeof core.info>;
@@ -34,7 +34,7 @@ END:VEVENT`);
   }
 
   // We never add VCalendar or VTimezone for our mocks so force the type to what we actually want it to be
-  return Object.values(icalSync.parseICS(body.join(""))) as VEvent[];
+  return adjustEventTimesToUTC(Object.values(icalSync.parseICS(body.join(""))) as VEvent[]);
 };
 
 const today = new Date();
