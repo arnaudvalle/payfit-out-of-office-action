@@ -1,6 +1,6 @@
 import { VEvent, async as icalAsync, sync as icalSync } from "node-ical";
 import * as core from "@actions/core";
-import { getEmployeesFromEvents, getEventsForEmployees } from "./helpers";
+import { adjustEventTimesToUTC, getEmployeesFromEvents, getEventsForEmployees } from "./helpers";
 
 export async function run(): Promise<void> {
   try {
@@ -31,7 +31,7 @@ export async function run(): Promise<void> {
 
     core.info(`Found a total of ${events.length} events in ical`);
 
-    const employeeEvents = getEventsForEmployees(events, names.split(","));
+    const employeeEvents = getEventsForEmployees(adjustEventTimesToUTC(events), names.split(","));
 
     const outOfOfficeEmployees = getEmployeesFromEvents(employeeEvents);
 
