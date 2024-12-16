@@ -4123,21 +4123,10 @@ var Writable = (__nccwpck_require__(2781).Writable);
 var assert = __nccwpck_require__(9491);
 var debug = __nccwpck_require__(1133);
 
-// Preventive platform detection
-// istanbul ignore next
-(function detectUnsupportedEnvironment() {
-  var looksLikeNode = typeof process !== "undefined";
-  var looksLikeBrowser = typeof window !== "undefined" && typeof document !== "undefined";
-  var looksLikeV8 = isFunction(Error.captureStackTrace);
-  if (!looksLikeNode && (looksLikeBrowser || !looksLikeV8)) {
-    console.warn("The follow-redirects package should be excluded from browser builds.");
-  }
-}());
-
 // Whether to use the native URL object or the legacy url module
 var useNativeURL = false;
 try {
-  assert(new URL(""));
+  assert(new URL());
 }
 catch (error) {
   useNativeURL = error.code === "ERR_INVALID_URL";
@@ -4474,17 +4463,17 @@ RedirectableRequest.prototype._performRequest = function () {
     var buffers = this._requestBodyBuffers;
     (function writeNext(error) {
       // Only write if this request has not been redirected yet
-      // istanbul ignore else
+      /* istanbul ignore else */
       if (request === self._currentRequest) {
         // Report any write errors
-        // istanbul ignore if
+        /* istanbul ignore if */
         if (error) {
           self.emit("error", error);
         }
         // Write the next buffer if there are still left
         else if (i < buffers.length) {
           var buffer = buffers[i++];
-          // istanbul ignore else
+          /* istanbul ignore else */
           if (!request.finished) {
             request.write(buffer.data, buffer.encoding, writeNext);
           }
@@ -4680,7 +4669,7 @@ function noop() { /* empty */ }
 
 function parseUrl(input) {
   var parsed;
-  // istanbul ignore else
+  /* istanbul ignore else */
   if (useNativeURL) {
     parsed = new URL(input);
   }
@@ -4695,7 +4684,7 @@ function parseUrl(input) {
 }
 
 function resolveUrl(relative, base) {
-  // istanbul ignore next
+  /* istanbul ignore next */
   return useNativeURL ? new URL(relative, base) : parseUrl(url.resolve(base, relative));
 }
 
@@ -4744,10 +4733,7 @@ function removeMatchingHeaders(regex, headers) {
 function createErrorType(code, message, baseClass) {
   // Create constructor
   function CustomError(properties) {
-    // istanbul ignore else
-    if (isFunction(Error.captureStackTrace)) {
-      Error.captureStackTrace(this, this.constructor);
-    }
+    Error.captureStackTrace(this, this.constructor);
     Object.assign(this, properties || {});
     this.code = code;
     this.message = this.cause ? message + ": " + this.cause.message : message;
@@ -4871,7 +4857,7 @@ FormData.prototype.append = function(field, value, options) {
   }
 
   // https://github.com/felixge/node-form-data/issues/38
-  if (Array.isArray(value)) {
+  if (util.isArray(value)) {
     // Please convert your array into string
     // the way web server expects it
     this._error(new Error('Arrays are not supported.'));
@@ -12192,8 +12178,7 @@ const text = function (t = '') {
     .replace(/\\,/g, ',')
     .replace(/\\;/g, ';')
     .replace(/\\[nN]/g, '\n')
-    .replace(/\\\\/g, '\\')
-    .replace(/^"(.*)"$/, '$1');
+    .replace(/\\\\/g, '\\');
 };
 
 const parseValue = function (value) {
@@ -12209,9 +12194,6 @@ const parseValue = function (value) {
   if (!Number.isNaN(number)) {
     return number;
   }
-
-  // Remove quotes if found
-  value = value.replace(/^"(.*)"$/, '$1');
 
   return value;
 };
@@ -12260,17 +12242,20 @@ const storeParameter = function (name) {
 };
 
 const addTZ = function (dt, parameters) {
-  if (dt && dt.tz) {
+  const p = parseParameters(parameters);
+
+  if (dt.tz) {
     // Date already has a timezone property
     return dt;
   }
 
-  const p = parseParameters(parameters);
-  if (parameters && p && dt && typeof p.TZID !== 'undefined') {
-    dt.tz = p.TZID.toString();
-    // Remove surrounding quotes if found at the beginning and at the end of the string
-    // (Occurs when parsing Microsoft Exchange events containing TZID with Windows standard format instead IANA)
-    dt.tz = dt.tz.replace(/^"(.*)"$/, '$1');
+  if (parameters && p && dt) {
+    dt.tz = p.TZID;
+    if (dt.tz !== undefined) {
+      // Remove surrounding quotes if found at the beginning and at the end of the string
+      // (Occurs when parsing Microsoft Exchange events containing TZID with Windows standard format instead IANA)
+      dt.tz = dt.tz.replace(/^"(.*)"$/, '$1');
+    }
   }
 
   return dt;
@@ -12333,8 +12318,8 @@ function getTimeZone(value) {
   if (tz && tz.startsWith('(')) {
     // Extract just the offset
     const regex = /[+|-]\d*:\d*/;
-    found = tz.match(regex);
     tz = null;
+    found = tz.match(regex);
   }
 
   // Timezone not confirmed yet
@@ -12441,8 +12426,8 @@ const dateParameter = function (name) {
           // Extract just the offset
           const regex = /[+|-]\d*:\d*/;
           offset = tz.match(regex);
-          found = offset;
           tz = null;
+          found = offset;
         }
 
         // Timezone not confirmed yet
@@ -12547,7 +12532,7 @@ const exdateParameter = function (name) {
         if (typeof exdate[name].toISOString === 'function') {
           curr[name][exdate[name].toISOString().slice(0, 10)] = exdate[name];
         } else {
-          throw new TypeError('No toISOString function in exdate[name] = ' + exdate[name]);
+          throw new TypeError('No toISOString function in exdate[name]', exdate[name]);
         }
       }
     }
@@ -12633,10 +12618,11 @@ module.exports = {
           curr.end = (curr.datetype === 'date-time') ? new Date(curr.start.getTime()) : moment.utc(curr.start).add(1, 'days').toDate();
 
           // If there was a duration specified
-          // see RFC5545, 3.3.6 (no year and month)
           if (curr.duration !== undefined) {
             const durationUnits =
             {
+              // Y: 'years',
+              // M: 'months',
               W: 'weeks',
               D: 'days',
               H: 'hours',
@@ -12644,26 +12630,15 @@ module.exports = {
               S: 'seconds'
             };
             // Get the list of duration elements
-            const duration = curr.duration.match(/-?\d{1,10}[WDHMS]/g);
+            const r = curr.duration.match(/-?\d{1,10}[YMWDHS]/g);
 
             // Use the duration to create the end value, from the start
-            const startMoment = moment.utc(curr.start);
-            let newEnd = startMoment;
-
+            let newend = moment.utc(curr.start);
             // Is the 1st character a negative sign?
             const indicator = curr.duration.startsWith('-') ? -1 : 1;
-
-            for (const r of duration) {
-              const unit = r.slice(-1);
-              if (!durationUnits[unit]) {
-                throw new Error(`Invalid duration unit: ${unit}`);
-              }
-
-              newEnd = newEnd.add(Number.parseInt(r, 10) * indicator, durationUnits[r.toString().slice(-1)]);
-            }
-
+            newend = newend.add(Number.parseInt(r, 10) * indicator, durationUnits[r.toString().slice(-1)]);
             // End is a Date type, not moment
-            curr.end = newEnd.toDate();
+            curr.end = newend.toDate();
           }
         }
 
@@ -12733,7 +12708,7 @@ module.exports = {
             if (typeof curr.recurrenceid.toISOString === 'function') {
               par[curr.uid].recurrences[curr.recurrenceid.toISOString().slice(0, 10)] = recurrenceObject;
             } else { // Removed issue 56
-              throw new TypeError('No toISOString function in curr.recurrenceid =' + curr.recurrenceid);
+              throw new TypeError('No toISOString function in curr.recurrenceid', curr.recurrenceid);
             }
           }
 
@@ -12769,8 +12744,11 @@ module.exports = {
         rule = rule.slice(rule.lastIndexOf('FREQ='));
         // If no rule start date
         if (rule.includes('DTSTART') === false) {
+          // Get date/time into a specific format for comapare
+          let x = moment(curr.start).format('MMMM/Do/YYYY, h:mm:ss a');
+          // If the local time value is midnight
           // This a whole day event
-          if (curr.datetype === 'date') {
+          if (x.slice(-11) === '12:00:00 am') {
             // Get the timezone offset
             // The internal date is stored in UTC format
             const offset = curr.start.getTimezoneOffset();
@@ -12782,7 +12760,7 @@ module.exports = {
               curr.start = new Date(curr.start.getTime() + (Math.abs(offset) * 60000));
             } else {
               // Get rid of any time (shouldn't be any, but be sure)
-              const x = moment(curr.start).format('MMMM/Do/YYYY');
+              x = moment(curr.start).format('MMMM/Do/YYYY');
               const comps = /^(\d{2})\/(\d{2})\/(\d{4})/.exec(x);
               if (comps) {
                 curr.start = new Date(comps[3], comps[1] - 1, comps[2]);
@@ -12796,23 +12774,17 @@ module.exports = {
               // If the original date has a TZID, add it
               if (curr.start.tz) {
                 const tz = getTimeZone(curr.start.tz);
-                // If a timezone is provided, rrule requires the time to be local
-                // but without Z suffix (cf. RFC5545, 3.3.5)
-                const adjustedTimeString = curr.start
-                  .toLocaleString('sv-SE', {timeZone: tz}) // 'sv-SE' outputs 'YYYY-MM-DD' date format
-                  .replace(/ /g, 'T')
-                  .replace(/[-:Z]/g, '');
-                rule += `;DTSTART;TZID=${tz}:${adjustedTimeString}`;
+                rule += `;DTSTART;TZID=${tz}:${curr.start.toISOString().replace(/[-:]/g, '')}`;
               } else {
                 rule += `;DTSTART=${curr.start.toISOString().replace(/[-:]/g, '')}`;
               }
 
               rule = rule.replace(/\.\d{3}/, '');
             } catch (error) { // This should not happen, issue #56
-              throw new Error('ERROR when trying to convert to ISOString ' + error);
+              throw new Error('ERROR when trying to convert to ISOString', error);
             }
           } else {
-            throw new Error('No toISOString function in curr.start ' + curr.start);
+            throw new Error('No toISOString function in curr.start', curr.start);
           }
         }
 
@@ -12831,23 +12803,11 @@ module.exports = {
     URL: storeParameter('url'),
     UID: storeParameter('uid'),
     LOCATION: storeParameter('location'),
-    DTSTART(value, parameters, curr, stack, line) {
-      // If already defined, this is a duplicate for this event
-      if (curr.start === undefined) {
-        curr = dateParameter('start')(value, parameters, curr, stack);
-        return typeParameter('datetype')(value, parameters, curr);
-      }
-
-      throw new Error('duplicate DTSTART encountered, line=' + line);
+    DTSTART(value, parameters, curr, stack) {
+      curr = dateParameter('start')(value, parameters, curr, stack);
+      return typeParameter('datetype')(value, parameters, curr);
     },
-    DTEND(value, parameters, curr, stack, line) {
-      // If already defined, this is a duplicate for this event
-      if (curr.end === undefined) {
-        return dateParameter('end')(value, parameters, curr, stack);
-      }
-
-      throw new Error('duplicate DTEND encountered, line=' + line);
-    },
+    DTEND: dateParameter('end'),
     EXDATE: exdateParameter('exdate'),
     ' CLASS': storeParameter('class'), // Should there be a space in this property?
     TRANSP: storeParameter('transparency'),
@@ -12902,7 +12862,7 @@ module.exports = {
       }
 
       // Remove any double quotes in any tzid statement// except around (utc+hh:mm
-      if (l.includes('TZID=') && !l.includes('"(')) {
+      if (l.indexOf('TZID=') && !l.includes('"(')) {
         l = l.replace(/"/g, '');
       }
 
@@ -39733,12 +39693,6 @@ module.exports = {
 Object.defineProperty(exports, "__esModule", ({
   value: true
 }));
-Object.defineProperty(exports, "MAX", ({
-  enumerable: true,
-  get: function () {
-    return _max.default;
-  }
-}));
 Object.defineProperty(exports, "NIL", ({
   enumerable: true,
   get: function () {
@@ -39763,12 +39717,6 @@ Object.defineProperty(exports, "v1", ({
     return _v.default;
   }
 }));
-Object.defineProperty(exports, "v1ToV6", ({
-  enumerable: true,
-  get: function () {
-    return _v1ToV.default;
-  }
-}));
 Object.defineProperty(exports, "v3", ({
   enumerable: true,
   get: function () {
@@ -39787,24 +39735,6 @@ Object.defineProperty(exports, "v5", ({
     return _v4.default;
   }
 }));
-Object.defineProperty(exports, "v6", ({
-  enumerable: true,
-  get: function () {
-    return _v5.default;
-  }
-}));
-Object.defineProperty(exports, "v6ToV1", ({
-  enumerable: true,
-  get: function () {
-    return _v6ToV.default;
-  }
-}));
-Object.defineProperty(exports, "v7", ({
-  enumerable: true,
-  get: function () {
-    return _v6.default;
-  }
-}));
 Object.defineProperty(exports, "validate", ({
   enumerable: true,
   get: function () {
@@ -39817,35 +39747,26 @@ Object.defineProperty(exports, "version", ({
     return _version.default;
   }
 }));
-var _max = _interopRequireDefault(__nccwpck_require__(6655));
-var _nil = _interopRequireDefault(__nccwpck_require__(5350));
-var _parse = _interopRequireDefault(__nccwpck_require__(2746));
-var _stringify = _interopRequireDefault(__nccwpck_require__(8950));
+
 var _v = _interopRequireDefault(__nccwpck_require__(8628));
-var _v1ToV = _interopRequireDefault(__nccwpck_require__(5696));
+
 var _v2 = _interopRequireDefault(__nccwpck_require__(6409));
+
 var _v3 = _interopRequireDefault(__nccwpck_require__(5122));
+
 var _v4 = _interopRequireDefault(__nccwpck_require__(9120));
-var _v5 = _interopRequireDefault(__nccwpck_require__(8080));
-var _v6ToV = _interopRequireDefault(__nccwpck_require__(3343));
-var _v6 = _interopRequireDefault(__nccwpck_require__(2778));
-var _validate = _interopRequireDefault(__nccwpck_require__(6900));
+
+var _nil = _interopRequireDefault(__nccwpck_require__(5350));
+
 var _version = _interopRequireDefault(__nccwpck_require__(1595));
-function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
 
-/***/ }),
+var _validate = _interopRequireDefault(__nccwpck_require__(6900));
 
-/***/ 6655:
-/***/ ((__unused_webpack_module, exports) => {
+var _stringify = _interopRequireDefault(__nccwpck_require__(8950));
 
-"use strict";
+var _parse = _interopRequireDefault(__nccwpck_require__(2746));
 
-
-Object.defineProperty(exports, "__esModule", ({
-  value: true
-}));
-exports["default"] = void 0;
-var _default = exports["default"] = 'ffffffff-ffff-ffff-ffff-ffffffffffff';
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /***/ }),
 
@@ -39859,17 +39780,23 @@ Object.defineProperty(exports, "__esModule", ({
   value: true
 }));
 exports["default"] = void 0;
-var _nodeCrypto = _interopRequireDefault(__nccwpck_require__(6005));
-function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
+
+var _crypto = _interopRequireDefault(__nccwpck_require__(6113));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
 function md5(bytes) {
   if (Array.isArray(bytes)) {
     bytes = Buffer.from(bytes);
   } else if (typeof bytes === 'string') {
     bytes = Buffer.from(bytes, 'utf8');
   }
-  return _nodeCrypto.default.createHash('md5').update(bytes).digest();
+
+  return _crypto.default.createHash('md5').update(bytes).digest();
 }
-var _default = exports["default"] = md5;
+
+var _default = md5;
+exports["default"] = _default;
 
 /***/ }),
 
@@ -39883,11 +39810,15 @@ Object.defineProperty(exports, "__esModule", ({
   value: true
 }));
 exports["default"] = void 0;
-var _nodeCrypto = _interopRequireDefault(__nccwpck_require__(6005));
-function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
-var _default = exports["default"] = {
-  randomUUID: _nodeCrypto.default.randomUUID
+
+var _crypto = _interopRequireDefault(__nccwpck_require__(6113));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var _default = {
+  randomUUID: _crypto.default.randomUUID
 };
+exports["default"] = _default;
 
 /***/ }),
 
@@ -39901,7 +39832,8 @@ Object.defineProperty(exports, "__esModule", ({
   value: true
 }));
 exports["default"] = void 0;
-var _default = exports["default"] = '00000000-0000-0000-0000-000000000000';
+var _default = '00000000-0000-0000-0000-000000000000';
+exports["default"] = _default;
 
 /***/ }),
 
@@ -39915,35 +39847,34 @@ Object.defineProperty(exports, "__esModule", ({
   value: true
 }));
 exports["default"] = void 0;
+
 var _validate = _interopRequireDefault(__nccwpck_require__(6900));
-function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
 function parse(uuid) {
   if (!(0, _validate.default)(uuid)) {
     throw TypeError('Invalid UUID');
   }
-  let v;
-  const arr = new Uint8Array(16);
 
-  // Parse ########-....-....-....-............
+  let v;
+  const arr = new Uint8Array(16); // Parse ########-....-....-....-............
+
   arr[0] = (v = parseInt(uuid.slice(0, 8), 16)) >>> 24;
   arr[1] = v >>> 16 & 0xff;
   arr[2] = v >>> 8 & 0xff;
-  arr[3] = v & 0xff;
+  arr[3] = v & 0xff; // Parse ........-####-....-....-............
 
-  // Parse ........-####-....-....-............
   arr[4] = (v = parseInt(uuid.slice(9, 13), 16)) >>> 8;
-  arr[5] = v & 0xff;
+  arr[5] = v & 0xff; // Parse ........-....-####-....-............
 
-  // Parse ........-....-####-....-............
   arr[6] = (v = parseInt(uuid.slice(14, 18), 16)) >>> 8;
-  arr[7] = v & 0xff;
+  arr[7] = v & 0xff; // Parse ........-....-....-####-............
 
-  // Parse ........-....-....-####-............
   arr[8] = (v = parseInt(uuid.slice(19, 23), 16)) >>> 8;
-  arr[9] = v & 0xff;
-
-  // Parse ........-....-....-....-############
+  arr[9] = v & 0xff; // Parse ........-....-....-....-############
   // (Use "/" to avoid 32-bit truncation when bit-shifting high-order bytes)
+
   arr[10] = (v = parseInt(uuid.slice(24, 36), 16)) / 0x10000000000 & 0xff;
   arr[11] = v / 0x100000000 & 0xff;
   arr[12] = v >>> 24 & 0xff;
@@ -39952,7 +39883,9 @@ function parse(uuid) {
   arr[15] = v & 0xff;
   return arr;
 }
-var _default = exports["default"] = parse;
+
+var _default = parse;
+exports["default"] = _default;
 
 /***/ }),
 
@@ -39966,7 +39899,8 @@ Object.defineProperty(exports, "__esModule", ({
   value: true
 }));
 exports["default"] = void 0;
-var _default = exports["default"] = /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/i;
+var _default = /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|00000000-0000-0000-0000-000000000000)$/i;
+exports["default"] = _default;
 
 /***/ }),
 
@@ -39980,15 +39914,22 @@ Object.defineProperty(exports, "__esModule", ({
   value: true
 }));
 exports["default"] = rng;
-var _nodeCrypto = _interopRequireDefault(__nccwpck_require__(6005));
-function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
+
+var _crypto = _interopRequireDefault(__nccwpck_require__(6113));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
 const rnds8Pool = new Uint8Array(256); // # of random values to pre-allocate
+
 let poolPtr = rnds8Pool.length;
+
 function rng() {
   if (poolPtr > rnds8Pool.length - 16) {
-    _nodeCrypto.default.randomFillSync(rnds8Pool);
+    _crypto.default.randomFillSync(rnds8Pool);
+
     poolPtr = 0;
   }
+
   return rnds8Pool.slice(poolPtr, poolPtr += 16);
 }
 
@@ -40004,17 +39945,23 @@ Object.defineProperty(exports, "__esModule", ({
   value: true
 }));
 exports["default"] = void 0;
-var _nodeCrypto = _interopRequireDefault(__nccwpck_require__(6005));
-function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
+
+var _crypto = _interopRequireDefault(__nccwpck_require__(6113));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
 function sha1(bytes) {
   if (Array.isArray(bytes)) {
     bytes = Buffer.from(bytes);
   } else if (typeof bytes === 'string') {
     bytes = Buffer.from(bytes, 'utf8');
   }
-  return _nodeCrypto.default.createHash('sha1').update(bytes).digest();
+
+  return _crypto.default.createHash('sha1').update(bytes).digest();
 }
-var _default = exports["default"] = sha1;
+
+var _default = sha1;
+exports["default"] = _default;
 
 /***/ }),
 
@@ -40029,37 +39976,43 @@ Object.defineProperty(exports, "__esModule", ({
 }));
 exports["default"] = void 0;
 exports.unsafeStringify = unsafeStringify;
+
 var _validate = _interopRequireDefault(__nccwpck_require__(6900));
-function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
 /**
  * Convert array of 16 byte values to UUID string format of the form:
  * XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
  */
 const byteToHex = [];
+
 for (let i = 0; i < 256; ++i) {
   byteToHex.push((i + 0x100).toString(16).slice(1));
 }
+
 function unsafeStringify(arr, offset = 0) {
   // Note: Be careful editing this code!  It's been tuned for performance
   // and works in ways you may not expect. See https://github.com/uuidjs/uuid/pull/434
-  //
-  // Note to future-self: No, you can't remove the `toLowerCase()` call.
-  // REF: https://github.com/uuidjs/uuid/pull/677#issuecomment-1757351351
-  return (byteToHex[arr[offset + 0]] + byteToHex[arr[offset + 1]] + byteToHex[arr[offset + 2]] + byteToHex[arr[offset + 3]] + '-' + byteToHex[arr[offset + 4]] + byteToHex[arr[offset + 5]] + '-' + byteToHex[arr[offset + 6]] + byteToHex[arr[offset + 7]] + '-' + byteToHex[arr[offset + 8]] + byteToHex[arr[offset + 9]] + '-' + byteToHex[arr[offset + 10]] + byteToHex[arr[offset + 11]] + byteToHex[arr[offset + 12]] + byteToHex[arr[offset + 13]] + byteToHex[arr[offset + 14]] + byteToHex[arr[offset + 15]]).toLowerCase();
+  return byteToHex[arr[offset + 0]] + byteToHex[arr[offset + 1]] + byteToHex[arr[offset + 2]] + byteToHex[arr[offset + 3]] + '-' + byteToHex[arr[offset + 4]] + byteToHex[arr[offset + 5]] + '-' + byteToHex[arr[offset + 6]] + byteToHex[arr[offset + 7]] + '-' + byteToHex[arr[offset + 8]] + byteToHex[arr[offset + 9]] + '-' + byteToHex[arr[offset + 10]] + byteToHex[arr[offset + 11]] + byteToHex[arr[offset + 12]] + byteToHex[arr[offset + 13]] + byteToHex[arr[offset + 14]] + byteToHex[arr[offset + 15]];
 }
+
 function stringify(arr, offset = 0) {
-  const uuid = unsafeStringify(arr, offset);
-  // Consistency check for valid UUID.  If this throws, it's likely due to one
+  const uuid = unsafeStringify(arr, offset); // Consistency check for valid UUID.  If this throws, it's likely due to one
   // of the following:
   // - One or more input array values don't map to a hex octet (leading to
   // "undefined" in the uuid)
   // - Invalid input values for the RFC `version` or `variant` fields
+
   if (!(0, _validate.default)(uuid)) {
     throw TypeError('Stringified UUID is invalid');
   }
+
   return uuid;
 }
-var _default = exports["default"] = stringify;
+
+var _default = stringify;
+exports["default"] = _default;
 
 /***/ }),
 
@@ -40073,164 +40026,107 @@ Object.defineProperty(exports, "__esModule", ({
   value: true
 }));
 exports["default"] = void 0;
+
 var _rng = _interopRequireDefault(__nccwpck_require__(807));
+
 var _stringify = __nccwpck_require__(8950);
-function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
 // **`v1()` - Generate time-based UUID**
 //
 // Inspired by https://github.com/LiosK/UUID.js
 // and http://docs.python.org/library/uuid.html
-
 let _nodeId;
-let _clockseq;
 
-// Previous uuid creation time
+let _clockseq; // Previous uuid creation time
+
+
 let _lastMSecs = 0;
-let _lastNSecs = 0;
+let _lastNSecs = 0; // See https://github.com/uuidjs/uuid for API details
 
-// See https://github.com/uuidjs/uuid for API details
 function v1(options, buf, offset) {
   let i = buf && offset || 0;
   const b = buf || new Array(16);
   options = options || {};
-  let node = options.node;
-  let clockseq = options.clockseq;
+  let node = options.node || _nodeId;
+  let clockseq = options.clockseq !== undefined ? options.clockseq : _clockseq; // node and clockseq need to be initialized to random values if they're not
+  // specified.  We do this lazily to minimize issues related to insufficient
+  // system entropy.  See #189
 
-  // v1 only: Use cached `node` and `clockseq` values
-  if (!options._v6) {
-    if (!node) {
-      node = _nodeId;
-    }
-    if (clockseq == null) {
-      clockseq = _clockseq;
-    }
-  }
-
-  // Handle cases where we need entropy.  We do this lazily to minimize issues
-  // related to insufficient system entropy.  See #189
   if (node == null || clockseq == null) {
     const seedBytes = options.random || (options.rng || _rng.default)();
 
-    // Randomize node
     if (node == null) {
-      node = [seedBytes[0], seedBytes[1], seedBytes[2], seedBytes[3], seedBytes[4], seedBytes[5]];
-
-      // v1 only: cache node value for reuse
-      if (!_nodeId && !options._v6) {
-        // per RFC4122 4.5: Set MAC multicast bit (v1 only)
-        node[0] |= 0x01; // Set multicast bit
-
-        _nodeId = node;
-      }
+      // Per 4.5, create and 48-bit node id, (47 random bits + multicast bit = 1)
+      node = _nodeId = [seedBytes[0] | 0x01, seedBytes[1], seedBytes[2], seedBytes[3], seedBytes[4], seedBytes[5]];
     }
 
-    // Randomize clockseq
     if (clockseq == null) {
       // Per 4.2.2, randomize (14 bit) clockseq
-      clockseq = (seedBytes[6] << 8 | seedBytes[7]) & 0x3fff;
-      if (_clockseq === undefined && !options._v6) {
-        _clockseq = clockseq;
-      }
+      clockseq = _clockseq = (seedBytes[6] << 8 | seedBytes[7]) & 0x3fff;
     }
-  }
-
-  // v1 & v6 timestamps are 100 nano-second units since the Gregorian epoch,
-  // (1582-10-15 00:00).  JSNumbers aren't precise enough for this, so time is
-  // handled internally as 'msecs' (integer milliseconds) and 'nsecs'
+  } // UUID timestamps are 100 nano-second units since the Gregorian epoch,
+  // (1582-10-15 00:00).  JSNumbers aren't precise enough for this, so
+  // time is handled internally as 'msecs' (integer milliseconds) and 'nsecs'
   // (100-nanoseconds offset from msecs) since unix epoch, 1970-01-01 00:00.
-  let msecs = options.msecs !== undefined ? options.msecs : Date.now();
 
-  // Per 4.2.1.2, use count of uuid's generated during the current clock
+
+  let msecs = options.msecs !== undefined ? options.msecs : Date.now(); // Per 4.2.1.2, use count of uuid's generated during the current clock
   // cycle to simulate higher resolution clock
-  let nsecs = options.nsecs !== undefined ? options.nsecs : _lastNSecs + 1;
 
-  // Time since last uuid creation (in msecs)
-  const dt = msecs - _lastMSecs + (nsecs - _lastNSecs) / 10000;
+  let nsecs = options.nsecs !== undefined ? options.nsecs : _lastNSecs + 1; // Time since last uuid creation (in msecs)
 
-  // Per 4.2.1.2, Bump clockseq on clock regression
+  const dt = msecs - _lastMSecs + (nsecs - _lastNSecs) / 10000; // Per 4.2.1.2, Bump clockseq on clock regression
+
   if (dt < 0 && options.clockseq === undefined) {
     clockseq = clockseq + 1 & 0x3fff;
-  }
-
-  // Reset nsecs if clock regresses (new clockseq) or we've moved onto a new
+  } // Reset nsecs if clock regresses (new clockseq) or we've moved onto a new
   // time interval
+
+
   if ((dt < 0 || msecs > _lastMSecs) && options.nsecs === undefined) {
     nsecs = 0;
-  }
+  } // Per 4.2.1.2 Throw error if too many uuids are requested
 
-  // Per 4.2.1.2 Throw error if too many uuids are requested
+
   if (nsecs >= 10000) {
     throw new Error("uuid.v1(): Can't create more than 10M uuids/sec");
   }
+
   _lastMSecs = msecs;
   _lastNSecs = nsecs;
-  _clockseq = clockseq;
+  _clockseq = clockseq; // Per 4.1.4 - Convert from unix epoch to Gregorian epoch
 
-  // Per 4.1.4 - Convert from unix epoch to Gregorian epoch
-  msecs += 12219292800000;
+  msecs += 12219292800000; // `time_low`
 
-  // `time_low`
   const tl = ((msecs & 0xfffffff) * 10000 + nsecs) % 0x100000000;
   b[i++] = tl >>> 24 & 0xff;
   b[i++] = tl >>> 16 & 0xff;
   b[i++] = tl >>> 8 & 0xff;
-  b[i++] = tl & 0xff;
+  b[i++] = tl & 0xff; // `time_mid`
 
-  // `time_mid`
   const tmh = msecs / 0x100000000 * 10000 & 0xfffffff;
   b[i++] = tmh >>> 8 & 0xff;
-  b[i++] = tmh & 0xff;
+  b[i++] = tmh & 0xff; // `time_high_and_version`
 
-  // `time_high_and_version`
   b[i++] = tmh >>> 24 & 0xf | 0x10; // include version
-  b[i++] = tmh >>> 16 & 0xff;
 
-  // `clock_seq_hi_and_reserved` (Per 4.2.2 - include variant)
-  b[i++] = clockseq >>> 8 | 0x80;
+  b[i++] = tmh >>> 16 & 0xff; // `clock_seq_hi_and_reserved` (Per 4.2.2 - include variant)
 
-  // `clock_seq_low`
-  b[i++] = clockseq & 0xff;
+  b[i++] = clockseq >>> 8 | 0x80; // `clock_seq_low`
 
-  // `node`
+  b[i++] = clockseq & 0xff; // `node`
+
   for (let n = 0; n < 6; ++n) {
     b[i + n] = node[n];
   }
+
   return buf || (0, _stringify.unsafeStringify)(b);
 }
-var _default = exports["default"] = v1;
 
-/***/ }),
-
-/***/ 5696:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", ({
-  value: true
-}));
-exports["default"] = v1ToV6;
-var _parse = _interopRequireDefault(__nccwpck_require__(2746));
-var _stringify = __nccwpck_require__(8950);
-function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
-/**
- * Convert a v1 UUID to a v6 UUID
- *
- * @param {string|Uint8Array} uuid - The v1 UUID to convert to v6
- * @returns {string|Uint8Array} The v6 UUID as the same type as the `uuid` arg
- * (string or Uint8Array)
- */
-function v1ToV6(uuid) {
-  const v1Bytes = typeof uuid === 'string' ? (0, _parse.default)(uuid) : uuid;
-  const v6Bytes = _v1ToV6(v1Bytes);
-  return typeof uuid === 'string' ? (0, _stringify.unsafeStringify)(v6Bytes) : v6Bytes;
-}
-
-// Do the field transformation needed for v1 -> v6
-function _v1ToV6(v1Bytes, randomize = false) {
-  return Uint8Array.of((v1Bytes[6] & 0x0f) << 4 | v1Bytes[7] >> 4 & 0x0f, (v1Bytes[7] & 0x0f) << 4 | (v1Bytes[4] & 0xf0) >> 4, (v1Bytes[4] & 0x0f) << 4 | (v1Bytes[5] & 0xf0) >> 4, (v1Bytes[5] & 0x0f) << 4 | (v1Bytes[0] & 0xf0) >> 4, (v1Bytes[0] & 0x0f) << 4 | (v1Bytes[1] & 0xf0) >> 4, (v1Bytes[1] & 0x0f) << 4 | (v1Bytes[2] & 0xf0) >> 4, 0x60 | v1Bytes[2] & 0x0f, v1Bytes[3], v1Bytes[8], v1Bytes[9], v1Bytes[10], v1Bytes[11], v1Bytes[12], v1Bytes[13], v1Bytes[14], v1Bytes[15]);
-}
+var _default = v1;
+exports["default"] = _default;
 
 /***/ }),
 
@@ -40244,11 +40140,16 @@ Object.defineProperty(exports, "__esModule", ({
   value: true
 }));
 exports["default"] = void 0;
+
 var _v = _interopRequireDefault(__nccwpck_require__(5998));
+
 var _md = _interopRequireDefault(__nccwpck_require__(4569));
-function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
 const v3 = (0, _v.default)('v3', 0x30, _md.default);
-var _default = exports["default"] = v3;
+var _default = v3;
+exports["default"] = _default;
 
 /***/ }),
 
@@ -40263,58 +40164,75 @@ Object.defineProperty(exports, "__esModule", ({
 }));
 exports.URL = exports.DNS = void 0;
 exports["default"] = v35;
+
 var _stringify = __nccwpck_require__(8950);
+
 var _parse = _interopRequireDefault(__nccwpck_require__(2746));
-function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
 function stringToBytes(str) {
   str = unescape(encodeURIComponent(str)); // UTF8 escape
 
   const bytes = [];
+
   for (let i = 0; i < str.length; ++i) {
     bytes.push(str.charCodeAt(i));
   }
+
   return bytes;
 }
-const DNS = exports.DNS = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
-const URL = exports.URL = '6ba7b811-9dad-11d1-80b4-00c04fd430c8';
+
+const DNS = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+exports.DNS = DNS;
+const URL = '6ba7b811-9dad-11d1-80b4-00c04fd430c8';
+exports.URL = URL;
+
 function v35(name, version, hashfunc) {
   function generateUUID(value, namespace, buf, offset) {
     var _namespace;
+
     if (typeof value === 'string') {
       value = stringToBytes(value);
     }
+
     if (typeof namespace === 'string') {
       namespace = (0, _parse.default)(namespace);
     }
+
     if (((_namespace = namespace) === null || _namespace === void 0 ? void 0 : _namespace.length) !== 16) {
       throw TypeError('Namespace must be array-like (16 iterable integer values, 0-255)');
-    }
-
-    // Compute hash of namespace and value, Per 4.3
+    } // Compute hash of namespace and value, Per 4.3
     // Future: Use spread syntax when supported on all platforms, e.g. `bytes =
     // hashfunc([...namespace, ... value])`
+
+
     let bytes = new Uint8Array(16 + value.length);
     bytes.set(namespace);
     bytes.set(value, namespace.length);
     bytes = hashfunc(bytes);
     bytes[6] = bytes[6] & 0x0f | version;
     bytes[8] = bytes[8] & 0x3f | 0x80;
+
     if (buf) {
       offset = offset || 0;
+
       for (let i = 0; i < 16; ++i) {
         buf[offset + i] = bytes[i];
       }
+
       return buf;
     }
+
     return (0, _stringify.unsafeStringify)(bytes);
-  }
+  } // Function#name is not settable on some platforms (#270)
 
-  // Function#name is not settable on some platforms (#270)
+
   try {
-    generateUUID.name = name;
-  } catch (err) {}
+    generateUUID.name = name; // eslint-disable-next-line no-empty
+  } catch (err) {} // For CommonJS default export support
 
-  // For CommonJS default export support
+
   generateUUID.DNS = DNS;
   generateUUID.URL = URL;
   return generateUUID;
@@ -40332,32 +40250,43 @@ Object.defineProperty(exports, "__esModule", ({
   value: true
 }));
 exports["default"] = void 0;
+
 var _native = _interopRequireDefault(__nccwpck_require__(2054));
+
 var _rng = _interopRequireDefault(__nccwpck_require__(807));
+
 var _stringify = __nccwpck_require__(8950);
-function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
 function v4(options, buf, offset) {
   if (_native.default.randomUUID && !buf && !options) {
     return _native.default.randomUUID();
   }
+
   options = options || {};
-  const rnds = options.random || (options.rng || _rng.default)();
 
-  // Per 4.4, set bits for version and `clock_seq_hi_and_reserved`
+  const rnds = options.random || (options.rng || _rng.default)(); // Per 4.4, set bits for version and `clock_seq_hi_and_reserved`
+
+
   rnds[6] = rnds[6] & 0x0f | 0x40;
-  rnds[8] = rnds[8] & 0x3f | 0x80;
+  rnds[8] = rnds[8] & 0x3f | 0x80; // Copy bytes to buffer, if provided
 
-  // Copy bytes to buffer, if provided
   if (buf) {
     offset = offset || 0;
+
     for (let i = 0; i < 16; ++i) {
       buf[offset + i] = rnds[i];
     }
+
     return buf;
   }
+
   return (0, _stringify.unsafeStringify)(rnds);
 }
-var _default = exports["default"] = v4;
+
+var _default = v4;
+exports["default"] = _default;
 
 /***/ }),
 
@@ -40371,248 +40300,16 @@ Object.defineProperty(exports, "__esModule", ({
   value: true
 }));
 exports["default"] = void 0;
+
 var _v = _interopRequireDefault(__nccwpck_require__(5998));
+
 var _sha = _interopRequireDefault(__nccwpck_require__(5274));
-function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
 const v5 = (0, _v.default)('v5', 0x50, _sha.default);
-var _default = exports["default"] = v5;
-
-/***/ }),
-
-/***/ 8080:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", ({
-  value: true
-}));
-exports["default"] = v6;
-var _stringify = __nccwpck_require__(8950);
-var _v = _interopRequireDefault(__nccwpck_require__(8628));
-var _v1ToV = _interopRequireDefault(__nccwpck_require__(5696));
-function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
-/**
- *
- * @param {object} options
- * @param {Uint8Array=} buf
- * @param {number=} offset
- * @returns
- */
-function v6(options = {}, buf, offset = 0) {
-  // v6 is v1 with different field layout, so we start with a v1 UUID, albeit
-  // with slightly different behavior around how the clock_seq and node fields
-  // are randomized, which is why we call v1 with _v6: true.
-  let bytes = (0, _v.default)({
-    ...options,
-    _v6: true
-  }, new Uint8Array(16));
-
-  // Reorder the fields to v6 layout.
-  bytes = (0, _v1ToV.default)(bytes);
-
-  // Return as a byte array if requested
-  if (buf) {
-    for (let i = 0; i < 16; i++) {
-      buf[offset + i] = bytes[i];
-    }
-    return buf;
-  }
-  return (0, _stringify.unsafeStringify)(bytes);
-}
-
-/***/ }),
-
-/***/ 3343:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", ({
-  value: true
-}));
-exports["default"] = v6ToV1;
-var _parse = _interopRequireDefault(__nccwpck_require__(2746));
-var _stringify = __nccwpck_require__(8950);
-function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
-/**
- * Convert a v6 UUID to a v1 UUID
- *
- * @param {string|Uint8Array} uuid - The v6 UUID to convert to v6
- * @returns {string|Uint8Array} The v1 UUID as the same type as the `uuid` arg
- * (string or Uint8Array)
- */
-function v6ToV1(uuid) {
-  const v6Bytes = typeof uuid === 'string' ? (0, _parse.default)(uuid) : uuid;
-  const v1Bytes = _v6ToV1(v6Bytes);
-  return typeof uuid === 'string' ? (0, _stringify.unsafeStringify)(v1Bytes) : v1Bytes;
-}
-
-// Do the field transformation needed for v6 -> v1
-function _v6ToV1(v6Bytes) {
-  return Uint8Array.of((v6Bytes[3] & 0x0f) << 4 | v6Bytes[4] >> 4 & 0x0f, (v6Bytes[4] & 0x0f) << 4 | (v6Bytes[5] & 0xf0) >> 4, (v6Bytes[5] & 0x0f) << 4 | v6Bytes[6] & 0x0f, v6Bytes[7], (v6Bytes[1] & 0x0f) << 4 | (v6Bytes[2] & 0xf0) >> 4, (v6Bytes[2] & 0x0f) << 4 | (v6Bytes[3] & 0xf0) >> 4, 0x10 | (v6Bytes[0] & 0xf0) >> 4, (v6Bytes[0] & 0x0f) << 4 | (v6Bytes[1] & 0xf0) >> 4, v6Bytes[8], v6Bytes[9], v6Bytes[10], v6Bytes[11], v6Bytes[12], v6Bytes[13], v6Bytes[14], v6Bytes[15]);
-}
-
-/***/ }),
-
-/***/ 2778:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", ({
-  value: true
-}));
-exports["default"] = void 0;
-var _rng = _interopRequireDefault(__nccwpck_require__(807));
-var _stringify = __nccwpck_require__(8950);
-function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
-/**
- * UUID V7 - Unix Epoch time-based UUID
- *
- * The IETF has published RFC9562, introducing 3 new UUID versions (6,7,8). This
- * implementation of V7 is based on the accepted, though not yet approved,
- * revisions.
- *
- * RFC 9562:https://www.rfc-editor.org/rfc/rfc9562.html Universally Unique
- * IDentifiers (UUIDs)
-
- *
- * Sample V7 value:
- * https://www.rfc-editor.org/rfc/rfc9562.html#name-example-of-a-uuidv7-value
- *
- * Monotonic Bit Layout: RFC rfc9562.6.2 Method 1, Dedicated Counter Bits ref:
- *     https://www.rfc-editor.org/rfc/rfc9562.html#section-6.2-5.1
- *
- *   0                   1                   2                   3 0 1 2 3 4 5 6
- *   7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
- *  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- *  |                          unix_ts_ms                           |
- *  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- *  |          unix_ts_ms           |  ver  |        seq_hi         |
- *  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- *  |var|               seq_low               |        rand         |
- *  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- *  |                             rand                              |
- *  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- *
- * seq is a 31 bit serialized counter; comprised of 12 bit seq_hi and 19 bit
- * seq_low, and randomly initialized upon timestamp change. 31 bit counter size
- * was selected as any bitwise operations in node are done as _signed_ 32 bit
- * ints. we exclude the sign bit.
- */
-
-let _seqLow = null;
-let _seqHigh = null;
-let _msecs = 0;
-function v7(options, buf, offset) {
-  options = options || {};
-
-  // initialize buffer and pointer
-  let i = buf && offset || 0;
-  const b = buf || new Uint8Array(16);
-
-  // rnds is Uint8Array(16) filled with random bytes
-  const rnds = options.random || (options.rng || _rng.default)();
-
-  // milliseconds since unix epoch, 1970-01-01 00:00
-  const msecs = options.msecs !== undefined ? options.msecs : Date.now();
-
-  // seq is user provided 31 bit counter
-  let seq = options.seq !== undefined ? options.seq : null;
-
-  // initialize local seq high/low parts
-  let seqHigh = _seqHigh;
-  let seqLow = _seqLow;
-
-  // check if clock has advanced and user has not provided msecs
-  if (msecs > _msecs && options.msecs === undefined) {
-    _msecs = msecs;
-
-    // unless user provided seq, reset seq parts
-    if (seq !== null) {
-      seqHigh = null;
-      seqLow = null;
-    }
-  }
-
-  // if we have a user provided seq
-  if (seq !== null) {
-    // trim provided seq to 31 bits of value, avoiding overflow
-    if (seq > 0x7fffffff) {
-      seq = 0x7fffffff;
-    }
-
-    // split provided seq into high/low parts
-    seqHigh = seq >>> 19 & 0xfff;
-    seqLow = seq & 0x7ffff;
-  }
-
-  // randomly initialize seq
-  if (seqHigh === null || seqLow === null) {
-    seqHigh = rnds[6] & 0x7f;
-    seqHigh = seqHigh << 8 | rnds[7];
-    seqLow = rnds[8] & 0x3f; // pad for var
-    seqLow = seqLow << 8 | rnds[9];
-    seqLow = seqLow << 5 | rnds[10] >>> 3;
-  }
-
-  // increment seq if within msecs window
-  if (msecs + 10000 > _msecs && seq === null) {
-    if (++seqLow > 0x7ffff) {
-      seqLow = 0;
-      if (++seqHigh > 0xfff) {
-        seqHigh = 0;
-
-        // increment internal _msecs. this allows us to continue incrementing
-        // while staying monotonic. Note, once we hit 10k milliseconds beyond system
-        // clock, we will reset breaking monotonicity (after (2^31)*10000 generations)
-        _msecs++;
-      }
-    }
-  } else {
-    // resetting; we have advanced more than
-    // 10k milliseconds beyond system clock
-    _msecs = msecs;
-  }
-  _seqHigh = seqHigh;
-  _seqLow = seqLow;
-
-  // [bytes 0-5] 48 bits of local timestamp
-  b[i++] = _msecs / 0x10000000000 & 0xff;
-  b[i++] = _msecs / 0x100000000 & 0xff;
-  b[i++] = _msecs / 0x1000000 & 0xff;
-  b[i++] = _msecs / 0x10000 & 0xff;
-  b[i++] = _msecs / 0x100 & 0xff;
-  b[i++] = _msecs & 0xff;
-
-  // [byte 6] - set 4 bits of version (7) with first 4 bits seq_hi
-  b[i++] = seqHigh >>> 4 & 0x0f | 0x70;
-
-  // [byte 7] remaining 8 bits of seq_hi
-  b[i++] = seqHigh & 0xff;
-
-  // [byte 8] - variant (2 bits), first 6 bits seq_low
-  b[i++] = seqLow >>> 13 & 0x3f | 0x80;
-
-  // [byte 9] 8 bits seq_low
-  b[i++] = seqLow >>> 5 & 0xff;
-
-  // [byte 10] remaining 5 bits seq_low, 3 bits random
-  b[i++] = seqLow << 3 & 0xff | rnds[10] & 0x07;
-
-  // [bytes 11-15] always random
-  b[i++] = rnds[11];
-  b[i++] = rnds[12];
-  b[i++] = rnds[13];
-  b[i++] = rnds[14];
-  b[i++] = rnds[15];
-  return buf || (0, _stringify.unsafeStringify)(b);
-}
-var _default = exports["default"] = v7;
+var _default = v5;
+exports["default"] = _default;
 
 /***/ }),
 
@@ -40626,12 +40323,17 @@ Object.defineProperty(exports, "__esModule", ({
   value: true
 }));
 exports["default"] = void 0;
+
 var _regex = _interopRequireDefault(__nccwpck_require__(814));
-function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
 function validate(uuid) {
   return typeof uuid === 'string' && _regex.default.test(uuid);
 }
-var _default = exports["default"] = validate;
+
+var _default = validate;
+exports["default"] = _default;
 
 /***/ }),
 
@@ -40645,15 +40347,21 @@ Object.defineProperty(exports, "__esModule", ({
   value: true
 }));
 exports["default"] = void 0;
+
 var _validate = _interopRequireDefault(__nccwpck_require__(6900));
-function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
 function version(uuid) {
   if (!(0, _validate.default)(uuid)) {
     throw TypeError('Invalid UUID');
   }
+
   return parseInt(uuid.slice(14, 15), 16);
 }
-var _default = exports["default"] = version;
+
+var _default = version;
+exports["default"] = _default;
 
 /***/ }),
 
@@ -40686,7 +40394,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getEmployeesFromEvents = exports.getEventsForEmployees = void 0;
+exports.adjustEventTimesToUTC = exports.getEmployeesFromEvents = exports.getEventsForEmployees = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const PREFIX = "Absence - ";
 /**
@@ -40697,13 +40405,17 @@ const getEventsForEmployees = (events, employeeNames) => {
     core.info(`Looking for events for ${employeeNames.length} employees`);
     // All events summary seem to be made up of this prefix + fullname 🤷
     const allowedSummaries = employeeNames.map((fullname) => `${PREFIX}${fullname}`);
-    const today = new Date().setHours(0, 0, 0, 0);
+    const now = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate()));
+    const today = now.getTime();
+    const tomorrow = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate() + 1)).getTime();
     return events.filter(({ summary, start, end }) => {
-        // Only keep the events of the selected employees that start or end today
+        // Only keep the events of the selected employees that start today or end tomorrow
+        // Note: the end date is always +1 day
+        // Ex: if I'm off only today for a full day, then the end date will be tomorrow
         if (allowedSummaries.includes(summary) &&
             (start.getTime() === today ||
-                end.getTime() === today ||
-                (start.getTime() <= today && end.getTime() >= today))) {
+                end.getTime() === tomorrow ||
+                (start.getTime() <= today && end.getTime() >= tomorrow))) {
             return true;
         }
         return false;
@@ -40724,6 +40436,19 @@ const getEmployeesFromEvents = (employeeEvents) => {
     return outOfOfficeEmployees;
 };
 exports.getEmployeesFromEvents = getEmployeesFromEvents;
+/**
+ * Adjust the event times to UTC.
+ */
+const adjustEventTimesToUTC = (events) => {
+    return events.map((event) => {
+        return {
+            ...event,
+            start: new Date(Date.UTC(event.start.getFullYear(), event.start.getMonth(), event.start.getDate())),
+            end: new Date(Date.UTC(event.end.getFullYear(), event.end.getMonth(), event.end.getDate())),
+        };
+    });
+};
+exports.adjustEventTimesToUTC = adjustEventTimesToUTC;
 
 
 /***/ }),
@@ -40781,7 +40506,7 @@ async function run() {
             return;
         }
         core.info(`Found a total of ${events.length} events in ical`);
-        const employeeEvents = (0, helpers_1.getEventsForEmployees)(events, names.split(","));
+        const employeeEvents = (0, helpers_1.getEventsForEmployees)((0, helpers_1.adjustEventTimesToUTC)(events), names.split(","));
         const outOfOfficeEmployees = (0, helpers_1.getEmployeesFromEvents)(employeeEvents);
         // Set outputs for other workflow steps to use
         core.setOutput("names", outOfOfficeEmployees);
@@ -40892,14 +40617,6 @@ module.exports = require("https");
 
 "use strict";
 module.exports = require("net");
-
-/***/ }),
-
-/***/ 6005:
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("node:crypto");
 
 /***/ }),
 
@@ -42668,7 +42385,7 @@ module.exports = parseParams
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
-// Axios v1.7.8 Copyright (c) 2024 Matt Zabriskie and contributors
+// Axios v1.6.7 Copyright (c) 2024 Matt Zabriskie and contributors
 
 
 const FormData$1 = __nccwpck_require__(4334);
@@ -42680,19 +42397,19 @@ const util = __nccwpck_require__(3837);
 const followRedirects = __nccwpck_require__(7707);
 const zlib = __nccwpck_require__(9796);
 const stream = __nccwpck_require__(2781);
-const events = __nccwpck_require__(2361);
+const EventEmitter = __nccwpck_require__(2361);
 
 function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
 
 const FormData__default = /*#__PURE__*/_interopDefaultLegacy(FormData$1);
 const url__default = /*#__PURE__*/_interopDefaultLegacy(url);
-const proxyFromEnv__default = /*#__PURE__*/_interopDefaultLegacy(proxyFromEnv);
 const http__default = /*#__PURE__*/_interopDefaultLegacy(http);
 const https__default = /*#__PURE__*/_interopDefaultLegacy(https);
 const util__default = /*#__PURE__*/_interopDefaultLegacy(util);
 const followRedirects__default = /*#__PURE__*/_interopDefaultLegacy(followRedirects);
 const zlib__default = /*#__PURE__*/_interopDefaultLegacy(zlib);
 const stream__default = /*#__PURE__*/_interopDefaultLegacy(stream);
+const EventEmitter__default = /*#__PURE__*/_interopDefaultLegacy(EventEmitter);
 
 function bind(fn, thisArg) {
   return function wrap() {
@@ -42906,8 +42623,6 @@ const isFormData = (thing) => {
  * @returns {boolean} True if value is a URLSearchParams object, otherwise false
  */
 const isURLSearchParams = kindOfTest('URLSearchParams');
-
-const [isReadableStream, isRequest, isResponse, isHeaders] = ['ReadableStream', 'Request', 'Response', 'Headers'].map(kindOfTest);
 
 /**
  * Trim excess whitespace off the beginning and end of a string
@@ -43297,7 +43012,8 @@ const toObjectSet = (arrayOrString, delimiter) => {
 const noop = () => {};
 
 const toFiniteNumber = (value, defaultValue) => {
-  return value != null && Number.isFinite(value = +value) ? value : defaultValue;
+  value = +value;
+  return Number.isFinite(value) ? value : defaultValue;
 };
 
 const ALPHA = 'abcdefghijklmnopqrstuvwxyz';
@@ -43367,36 +43083,6 @@ const isAsyncFn = kindOfTest('AsyncFunction');
 const isThenable = (thing) =>
   thing && (isObject(thing) || isFunction(thing)) && isFunction(thing.then) && isFunction(thing.catch);
 
-// original code
-// https://github.com/DigitalBrainJS/AxiosPromise/blob/16deab13710ec09779922131f3fa5954320f83ab/lib/utils.js#L11-L34
-
-const _setImmediate = ((setImmediateSupported, postMessageSupported) => {
-  if (setImmediateSupported) {
-    return setImmediate;
-  }
-
-  return postMessageSupported ? ((token, callbacks) => {
-    _global.addEventListener("message", ({source, data}) => {
-      if (source === _global && data === token) {
-        callbacks.length && callbacks.shift()();
-      }
-    }, false);
-
-    return (cb) => {
-      callbacks.push(cb);
-      _global.postMessage(token, "*");
-    }
-  })(`axios@${Math.random()}`, []) : (cb) => setTimeout(cb);
-})(
-  typeof setImmediate === 'function',
-  isFunction(_global.postMessage)
-);
-
-const asap = typeof queueMicrotask !== 'undefined' ?
-  queueMicrotask.bind(_global) : ( typeof process !== 'undefined' && process.nextTick || _setImmediate);
-
-// *********************
-
 const utils$1 = {
   isArray,
   isArrayBuffer,
@@ -43408,10 +43094,6 @@ const utils$1 = {
   isBoolean,
   isObject,
   isPlainObject,
-  isReadableStream,
-  isRequest,
-  isResponse,
-  isHeaders,
   isUndefined,
   isDate,
   isFile,
@@ -43452,9 +43134,7 @@ const utils$1 = {
   isSpecCompliantForm,
   toJSONObject,
   isAsyncFn,
-  isThenable,
-  setImmediate: _setImmediate,
-  asap
+  isThenable
 };
 
 /**
@@ -43482,10 +43162,7 @@ function AxiosError(message, code, config, request, response) {
   code && (this.code = code);
   config && (this.config = config);
   request && (this.request = request);
-  if (response) {
-    this.response = response;
-    this.status = response.status ? response.status : null;
-  }
+  response && (this.response = response);
 }
 
 utils$1.inherits(AxiosError, Error, {
@@ -43505,7 +43182,7 @@ utils$1.inherits(AxiosError, Error, {
       // Axios
       config: utils$1.toJSONObject(this.config),
       code: this.code,
-      status: this.status
+      status: this.response && this.response.status ? this.response.status : null
     };
   }
 });
@@ -43842,7 +43519,7 @@ function encode(val) {
  *
  * @param {string} url The base of the url (e.g., http://www.google.com)
  * @param {object} [params] The params to be appended
- * @param {?(object|Function)} options
+ * @param {?object} options
  *
  * @returns {string} The formatted url
  */
@@ -43853,12 +43530,6 @@ function buildURL(url, params, options) {
   }
   
   const _encode = options && options.encode || encode;
-
-  if (utils$1.isFunction(options)) {
-    options = {
-      serialize: options
-    };
-  } 
 
   const serializeFn = options && options.serialize;
 
@@ -43972,8 +43643,6 @@ const platform$1 = {
 
 const hasBrowserEnv = typeof window !== 'undefined' && typeof document !== 'undefined';
 
-const _navigator = typeof navigator === 'object' && navigator || undefined;
-
 /**
  * Determine if we're running in a standard browser environment
  *
@@ -43991,8 +43660,10 @@ const _navigator = typeof navigator === 'object' && navigator || undefined;
  *
  * @returns {boolean}
  */
-const hasStandardBrowserEnv = hasBrowserEnv &&
-  (!_navigator || ['ReactNative', 'NativeScript', 'NS'].indexOf(_navigator.product) < 0);
+const hasStandardBrowserEnv = (
+  (product) => {
+    return hasBrowserEnv && ['ReactNative', 'NativeScript', 'NS'].indexOf(product) < 0
+  })(typeof navigator !== 'undefined' && navigator.product);
 
 /**
  * Determine if we're running in a standard browser webWorker environment
@@ -44012,15 +43683,11 @@ const hasStandardBrowserWebWorkerEnv = (() => {
   );
 })();
 
-const origin = hasBrowserEnv && window.location.href || 'http://localhost';
-
 const utils = /*#__PURE__*/Object.freeze({
   __proto__: null,
   hasBrowserEnv: hasBrowserEnv,
   hasStandardBrowserWebWorkerEnv: hasStandardBrowserWebWorkerEnv,
-  hasStandardBrowserEnv: hasStandardBrowserEnv,
-  navigator: _navigator,
-  origin: origin
+  hasStandardBrowserEnv: hasStandardBrowserEnv
 });
 
 const platform = {
@@ -44160,7 +43827,7 @@ const defaults = {
 
   transitional: transitionalDefaults,
 
-  adapter: ['xhr', 'http', 'fetch'],
+  adapter: ['xhr', 'http'],
 
   transformRequest: [function transformRequest(data, headers) {
     const contentType = headers.getContentType() || '';
@@ -44181,8 +43848,7 @@ const defaults = {
       utils$1.isBuffer(data) ||
       utils$1.isStream(data) ||
       utils$1.isFile(data) ||
-      utils$1.isBlob(data) ||
-      utils$1.isReadableStream(data)
+      utils$1.isBlob(data)
     ) {
       return data;
     }
@@ -44224,10 +43890,6 @@ const defaults = {
     const transitional = this.transitional || defaults.transitional;
     const forcedJSONParsing = transitional && transitional.forcedJSONParsing;
     const JSONRequested = this.responseType === 'json';
-
-    if (utils$1.isResponse(data) || utils$1.isReadableStream(data)) {
-      return data;
-    }
 
     if (data && utils$1.isString(data) && ((forcedJSONParsing && !this.responseType) || JSONRequested)) {
       const silentJSONParsing = transitional && transitional.silentJSONParsing;
@@ -44432,10 +44094,6 @@ class AxiosHeaders {
       setHeaders(header, valueOrRewrite);
     } else if(utils$1.isString(header) && (header = header.trim()) && !isValidHeaderName(header)) {
       setHeaders(parseHeaders(header), valueOrRewrite);
-    } else if (utils$1.isHeaders(header)) {
-      for (const [key, value] of header.entries()) {
-        setHeader(value, key, rewrite);
-      }
     } else {
       header != null && setHeader(valueOrRewrite, header, rewrite);
     }
@@ -44748,7 +44406,7 @@ function buildFullPath(baseURL, requestedURL) {
   return requestedURL;
 }
 
-const VERSION = "1.7.8";
+const VERSION = "1.6.7";
 
 function parseProtocol(url) {
   const match = /^([-+\w]{1,25})(:?\/\/|:)/.exec(url);
@@ -44803,6 +44461,88 @@ function fromDataURI(uri, asBlob, options) {
   throw new AxiosError('Unsupported protocol ' + protocol, AxiosError.ERR_NOT_SUPPORT);
 }
 
+/**
+ * Throttle decorator
+ * @param {Function} fn
+ * @param {Number} freq
+ * @return {Function}
+ */
+function throttle(fn, freq) {
+  let timestamp = 0;
+  const threshold = 1000 / freq;
+  let timer = null;
+  return function throttled(force, args) {
+    const now = Date.now();
+    if (force || now - timestamp > threshold) {
+      if (timer) {
+        clearTimeout(timer);
+        timer = null;
+      }
+      timestamp = now;
+      return fn.apply(null, args);
+    }
+    if (!timer) {
+      timer = setTimeout(() => {
+        timer = null;
+        timestamp = Date.now();
+        return fn.apply(null, args);
+      }, threshold - (now - timestamp));
+    }
+  };
+}
+
+/**
+ * Calculate data maxRate
+ * @param {Number} [samplesCount= 10]
+ * @param {Number} [min= 1000]
+ * @returns {Function}
+ */
+function speedometer(samplesCount, min) {
+  samplesCount = samplesCount || 10;
+  const bytes = new Array(samplesCount);
+  const timestamps = new Array(samplesCount);
+  let head = 0;
+  let tail = 0;
+  let firstSampleTS;
+
+  min = min !== undefined ? min : 1000;
+
+  return function push(chunkLength) {
+    const now = Date.now();
+
+    const startedAt = timestamps[tail];
+
+    if (!firstSampleTS) {
+      firstSampleTS = now;
+    }
+
+    bytes[head] = chunkLength;
+    timestamps[head] = now;
+
+    let i = tail;
+    let bytesCount = 0;
+
+    while (i !== head) {
+      bytesCount += bytes[i++];
+      i = i % samplesCount;
+    }
+
+    head = (head + 1) % samplesCount;
+
+    if (head === tail) {
+      tail = (tail + 1) % samplesCount;
+    }
+
+    if (now - firstSampleTS < min) {
+      return;
+    }
+
+    const passed = startedAt && now - startedAt;
+
+    return passed ? Math.round(bytesCount * 1000 / passed) : undefined;
+  };
+}
+
 const kInternals = Symbol('internals');
 
 class AxiosTransformStream extends stream__default["default"].Transform{
@@ -44822,8 +44562,12 @@ class AxiosTransformStream extends stream__default["default"].Transform{
       readableHighWaterMark: options.chunkSize
     });
 
+    const self = this;
+
     const internals = this[kInternals] = {
+      length: options.length,
       timeWindow: options.timeWindow,
+      ticksRate: options.ticksRate,
       chunkSize: options.chunkSize,
       maxRate: options.maxRate,
       minChunkSize: options.minChunkSize,
@@ -44835,6 +44579,8 @@ class AxiosTransformStream extends stream__default["default"].Transform{
       onReadCallback: null
     };
 
+    const _speedometer = speedometer(internals.ticksRate * options.samplesCount, internals.timeWindow);
+
     this.on('newListener', event => {
       if (event === 'progress') {
         if (!internals.isCaptured) {
@@ -44842,6 +44588,38 @@ class AxiosTransformStream extends stream__default["default"].Transform{
         }
       }
     });
+
+    let bytesNotified = 0;
+
+    internals.updateProgress = throttle(function throttledHandler() {
+      const totalBytes = internals.length;
+      const bytesTransferred = internals.bytesSeen;
+      const progressBytes = bytesTransferred - bytesNotified;
+      if (!progressBytes || self.destroyed) return;
+
+      const rate = _speedometer(progressBytes);
+
+      bytesNotified = bytesTransferred;
+
+      process.nextTick(() => {
+        self.emit('progress', {
+          'loaded': bytesTransferred,
+          'total': totalBytes,
+          'progress': totalBytes ? (bytesTransferred / totalBytes) : undefined,
+          'bytes': progressBytes,
+          'rate': rate ? rate : undefined,
+          'estimated': rate && totalBytes && bytesTransferred <= totalBytes ?
+            (totalBytes - bytesTransferred) / rate : undefined
+        });
+      });
+    }, internals.ticksRate);
+
+    const onFinish = () => {
+      internals.updateProgress(true);
+    };
+
+    this.once('end', onFinish);
+    this.once('error', onFinish);
   }
 
   _read(size) {
@@ -44855,6 +44633,7 @@ class AxiosTransformStream extends stream__default["default"].Transform{
   }
 
   _transform(chunk, encoding, callback) {
+    const self = this;
     const internals = this[kInternals];
     const maxRate = internals.maxRate;
 
@@ -44866,14 +44645,16 @@ class AxiosTransformStream extends stream__default["default"].Transform{
     const bytesThreshold = (maxRate / divider);
     const minChunkSize = internals.minChunkSize !== false ? Math.max(internals.minChunkSize, bytesThreshold * 0.01) : 0;
 
-    const pushChunk = (_chunk, _callback) => {
+    function pushChunk(_chunk, _callback) {
       const bytes = Buffer.byteLength(_chunk);
       internals.bytesSeen += bytes;
       internals.bytes += bytes;
 
-      internals.isCaptured && this.emit('progress', internals.bytesSeen);
+      if (internals.isCaptured) {
+        internals.updateProgress();
+      }
 
-      if (this.push(_chunk)) {
+      if (self.push(_chunk)) {
         process.nextTick(_callback);
       } else {
         internals.onReadCallback = () => {
@@ -44881,7 +44662,7 @@ class AxiosTransformStream extends stream__default["default"].Transform{
           process.nextTick(_callback);
         };
       }
-    };
+    }
 
     const transformChunk = (_chunk, _callback) => {
       const chunkSize = Buffer.byteLength(_chunk);
@@ -44938,6 +44719,11 @@ class AxiosTransformStream extends stream__default["default"].Transform{
       }
     });
   }
+
+  setLength(length) {
+    this[kInternals].length = +length;
+    return this;
+  }
 }
 
 const AxiosTransformStream$1 = AxiosTransformStream;
@@ -44960,7 +44746,7 @@ const readBlob$1 = readBlob;
 
 const BOUNDARY_ALPHABET = utils$1.ALPHABET.ALPHA_DIGIT + '-_';
 
-const textEncoder = typeof TextEncoder === 'function' ? new TextEncoder() : new util__default["default"].TextEncoder();
+const textEncoder = new util.TextEncoder();
 
 const CRLF = '\r\n';
 const CRLF_BYTES = textEncoder.encode(CRLF);
@@ -45105,142 +44891,6 @@ const callbackify = (fn, reducer) => {
 
 const callbackify$1 = callbackify;
 
-/**
- * Calculate data maxRate
- * @param {Number} [samplesCount= 10]
- * @param {Number} [min= 1000]
- * @returns {Function}
- */
-function speedometer(samplesCount, min) {
-  samplesCount = samplesCount || 10;
-  const bytes = new Array(samplesCount);
-  const timestamps = new Array(samplesCount);
-  let head = 0;
-  let tail = 0;
-  let firstSampleTS;
-
-  min = min !== undefined ? min : 1000;
-
-  return function push(chunkLength) {
-    const now = Date.now();
-
-    const startedAt = timestamps[tail];
-
-    if (!firstSampleTS) {
-      firstSampleTS = now;
-    }
-
-    bytes[head] = chunkLength;
-    timestamps[head] = now;
-
-    let i = tail;
-    let bytesCount = 0;
-
-    while (i !== head) {
-      bytesCount += bytes[i++];
-      i = i % samplesCount;
-    }
-
-    head = (head + 1) % samplesCount;
-
-    if (head === tail) {
-      tail = (tail + 1) % samplesCount;
-    }
-
-    if (now - firstSampleTS < min) {
-      return;
-    }
-
-    const passed = startedAt && now - startedAt;
-
-    return passed ? Math.round(bytesCount * 1000 / passed) : undefined;
-  };
-}
-
-/**
- * Throttle decorator
- * @param {Function} fn
- * @param {Number} freq
- * @return {Function}
- */
-function throttle(fn, freq) {
-  let timestamp = 0;
-  let threshold = 1000 / freq;
-  let lastArgs;
-  let timer;
-
-  const invoke = (args, now = Date.now()) => {
-    timestamp = now;
-    lastArgs = null;
-    if (timer) {
-      clearTimeout(timer);
-      timer = null;
-    }
-    fn.apply(null, args);
-  };
-
-  const throttled = (...args) => {
-    const now = Date.now();
-    const passed = now - timestamp;
-    if ( passed >= threshold) {
-      invoke(args, now);
-    } else {
-      lastArgs = args;
-      if (!timer) {
-        timer = setTimeout(() => {
-          timer = null;
-          invoke(lastArgs);
-        }, threshold - passed);
-      }
-    }
-  };
-
-  const flush = () => lastArgs && invoke(lastArgs);
-
-  return [throttled, flush];
-}
-
-const progressEventReducer = (listener, isDownloadStream, freq = 3) => {
-  let bytesNotified = 0;
-  const _speedometer = speedometer(50, 250);
-
-  return throttle(e => {
-    const loaded = e.loaded;
-    const total = e.lengthComputable ? e.total : undefined;
-    const progressBytes = loaded - bytesNotified;
-    const rate = _speedometer(progressBytes);
-    const inRange = loaded <= total;
-
-    bytesNotified = loaded;
-
-    const data = {
-      loaded,
-      total,
-      progress: total ? (loaded / total) : undefined,
-      bytes: progressBytes,
-      rate: rate ? rate : undefined,
-      estimated: rate && total && inRange ? (total - loaded) / rate : undefined,
-      event: e,
-      lengthComputable: total != null,
-      [isDownloadStream ? 'download' : 'upload']: true
-    };
-
-    listener(data);
-  }, freq);
-};
-
-const progressEventDecorator = (total, throttled) => {
-  const lengthComputable = total != null;
-
-  return [(loaded) => throttled[0]({
-    lengthComputable,
-    total,
-    loaded
-  }), throttled[1]];
-};
-
-const asyncDecorator = (fn) => (...args) => utils$1.asap(() => fn(...args));
-
 const zlibOptions = {
   flush: zlib__default["default"].constants.Z_SYNC_FLUSH,
   finishFlush: zlib__default["default"].constants.Z_SYNC_FLUSH
@@ -45260,14 +44910,6 @@ const isHttps = /https:?/;
 const supportedProtocols = platform.protocols.map(protocol => {
   return protocol + ':';
 });
-
-const flushOnFinish = (stream, [throttled, flush]) => {
-  stream
-    .on('end', flush)
-    .on('error', flush);
-
-  return throttled;
-};
 
 /**
  * If the proxy or config beforeRedirects functions are defined, call them with the options
@@ -45298,7 +44940,7 @@ function dispatchBeforeRedirect(options, responseDetails) {
 function setProxy(options, configProxy, location) {
   let proxy = configProxy;
   if (!proxy && proxy !== false) {
-    const proxyUrl = proxyFromEnv__default["default"].getProxyForUrl(location);
+    const proxyUrl = proxyFromEnv.getProxyForUrl(location);
     if (proxyUrl) {
       proxy = new URL(proxyUrl);
     }
@@ -45407,7 +45049,7 @@ const httpAdapter = isHttpAdapterSupported && function httpAdapter(config) {
     }
 
     // temporary internal emitter until the AxiosRequest class will be implemented
-    const emitter = new events.EventEmitter();
+    const emitter = new EventEmitter__default["default"]();
 
     const onFinished = () => {
       if (config.cancelToken) {
@@ -45444,7 +45086,7 @@ const httpAdapter = isHttpAdapterSupported && function httpAdapter(config) {
 
     // Parse url
     const fullPath = buildFullPath(config.baseURL, config.url);
-    const parsed = new URL(fullPath, platform.hasBrowserEnv ? platform.origin : undefined);
+    const parsed = new URL(fullPath, 'http://localhost');
     const protocol = parsed.protocol || supportedProtocols[0];
 
     if (protocol === 'data:') {
@@ -45502,7 +45144,8 @@ const httpAdapter = isHttpAdapterSupported && function httpAdapter(config) {
     // Only set header if it hasn't been set in config
     headers.set('User-Agent', 'axios/' + VERSION, false);
 
-    const {onUploadProgress, onDownloadProgress} = config;
+    const onDownloadProgress = config.onDownloadProgress;
+    const onUploadProgress = config.onUploadProgress;
     const maxRate = config.maxRate;
     let maxUploadRate = undefined;
     let maxDownloadRate = undefined;
@@ -45529,7 +45172,7 @@ const httpAdapter = isHttpAdapterSupported && function httpAdapter(config) {
         } catch (e) {
         }
       }
-    } else if (utils$1.isBlob(data) || utils$1.isFile(data)) {
+    } else if (utils$1.isBlob(data)) {
       data.size && headers.setContentType(data.type || 'application/octet-stream');
       headers.setContentLength(data.size || 0);
       data = stream__default["default"].Readable.from(readBlob$1(data));
@@ -45573,16 +45216,15 @@ const httpAdapter = isHttpAdapterSupported && function httpAdapter(config) {
       }
 
       data = stream__default["default"].pipeline([data, new AxiosTransformStream$1({
+        length: contentLength,
         maxRate: utils$1.toFiniteNumber(maxUploadRate)
       })], utils$1.noop);
 
-      onUploadProgress && data.on('progress', flushOnFinish(
-        data,
-        progressEventDecorator(
-          contentLength,
-          progressEventReducer(asyncDecorator(onUploadProgress), false, 3)
-        )
-      ));
+      onUploadProgress && data.on('progress', progress => {
+        onUploadProgress(Object.assign(progress, {
+          upload: true
+        }));
+      });
     }
 
     // HTTP basic authentication
@@ -45640,7 +45282,7 @@ const httpAdapter = isHttpAdapterSupported && function httpAdapter(config) {
     if (config.socketPath) {
       options.socketPath = config.socketPath;
     } else {
-      options.hostname = parsed.hostname.startsWith("[") ? parsed.hostname.slice(1, -1) : parsed.hostname;
+      options.hostname = parsed.hostname;
       options.port = parsed.port;
       setProxy(options, config.proxy, protocol + '//' + parsed.hostname + (parsed.port ? ':' + parsed.port : '') + options.path);
     }
@@ -45681,18 +45323,17 @@ const httpAdapter = isHttpAdapterSupported && function httpAdapter(config) {
 
       const responseLength = +res.headers['content-length'];
 
-      if (onDownloadProgress || maxDownloadRate) {
+      if (onDownloadProgress) {
         const transformStream = new AxiosTransformStream$1({
+          length: utils$1.toFiniteNumber(responseLength),
           maxRate: utils$1.toFiniteNumber(maxDownloadRate)
         });
 
-        onDownloadProgress && transformStream.on('progress', flushOnFinish(
-          transformStream,
-          progressEventDecorator(
-            responseLength,
-            progressEventReducer(asyncDecorator(onDownloadProgress), true, 3)
-          )
-        ));
+        onDownloadProgress && transformStream.on('progress', progress => {
+          onDownloadProgress(Object.assign(progress, {
+            download: true
+          }));
+        });
 
         streams.push(transformStream);
       }
@@ -45782,7 +45423,7 @@ const httpAdapter = isHttpAdapterSupported && function httpAdapter(config) {
           }
 
           const err = new AxiosError(
-            'stream has been aborted',
+            'maxContentLength size of ' + config.maxContentLength + ' exceeded',
             AxiosError.ERR_BAD_RESPONSE,
             config,
             lastRequest
@@ -45905,19 +45546,6 @@ const httpAdapter = isHttpAdapterSupported && function httpAdapter(config) {
   });
 };
 
-const isURLSameOrigin = platform.hasStandardBrowserEnv ? ((origin, isMSIE) => (url) => {
-  url = new URL(url, platform.origin);
-
-  return (
-    origin.protocol === url.protocol &&
-    origin.host === url.host &&
-    (isMSIE || origin.port === url.port)
-  );
-})(
-  new URL(platform.origin),
-  platform.navigator && /(msie|trident)/i.test(platform.navigator.userAgent)
-) : () => true;
-
 const cookies = platform.hasStandardBrowserEnv ?
 
   // Standard browser envs support document.cookie
@@ -45957,183 +45585,143 @@ const cookies = platform.hasStandardBrowserEnv ?
     remove() {}
   };
 
-const headersToObject = (thing) => thing instanceof AxiosHeaders$1 ? { ...thing } : thing;
+const isURLSameOrigin = platform.hasStandardBrowserEnv ?
 
-/**
- * Config-specific merge-function which creates a new config-object
- * by merging two configuration objects together.
- *
- * @param {Object} config1
- * @param {Object} config2
- *
- * @returns {Object} New object resulting from merging config2 to config1
- */
-function mergeConfig(config1, config2) {
-  // eslint-disable-next-line no-param-reassign
-  config2 = config2 || {};
-  const config = {};
+// Standard browser envs have full support of the APIs needed to test
+// whether the request URL is of the same origin as current location.
+  (function standardBrowserEnv() {
+    const msie = /(msie|trident)/i.test(navigator.userAgent);
+    const urlParsingNode = document.createElement('a');
+    let originURL;
 
-  function getMergedValue(target, source, prop, caseless) {
-    if (utils$1.isPlainObject(target) && utils$1.isPlainObject(source)) {
-      return utils$1.merge.call({caseless}, target, source);
-    } else if (utils$1.isPlainObject(source)) {
-      return utils$1.merge({}, source);
-    } else if (utils$1.isArray(source)) {
-      return source.slice();
-    }
-    return source;
-  }
+    /**
+    * Parse a URL to discover its components
+    *
+    * @param {String} url The URL to be parsed
+    * @returns {Object}
+    */
+    function resolveURL(url) {
+      let href = url;
 
-  // eslint-disable-next-line consistent-return
-  function mergeDeepProperties(a, b, prop , caseless) {
-    if (!utils$1.isUndefined(b)) {
-      return getMergedValue(a, b, prop , caseless);
-    } else if (!utils$1.isUndefined(a)) {
-      return getMergedValue(undefined, a, prop , caseless);
-    }
-  }
-
-  // eslint-disable-next-line consistent-return
-  function valueFromConfig2(a, b) {
-    if (!utils$1.isUndefined(b)) {
-      return getMergedValue(undefined, b);
-    }
-  }
-
-  // eslint-disable-next-line consistent-return
-  function defaultToConfig2(a, b) {
-    if (!utils$1.isUndefined(b)) {
-      return getMergedValue(undefined, b);
-    } else if (!utils$1.isUndefined(a)) {
-      return getMergedValue(undefined, a);
-    }
-  }
-
-  // eslint-disable-next-line consistent-return
-  function mergeDirectKeys(a, b, prop) {
-    if (prop in config2) {
-      return getMergedValue(a, b);
-    } else if (prop in config1) {
-      return getMergedValue(undefined, a);
-    }
-  }
-
-  const mergeMap = {
-    url: valueFromConfig2,
-    method: valueFromConfig2,
-    data: valueFromConfig2,
-    baseURL: defaultToConfig2,
-    transformRequest: defaultToConfig2,
-    transformResponse: defaultToConfig2,
-    paramsSerializer: defaultToConfig2,
-    timeout: defaultToConfig2,
-    timeoutMessage: defaultToConfig2,
-    withCredentials: defaultToConfig2,
-    withXSRFToken: defaultToConfig2,
-    adapter: defaultToConfig2,
-    responseType: defaultToConfig2,
-    xsrfCookieName: defaultToConfig2,
-    xsrfHeaderName: defaultToConfig2,
-    onUploadProgress: defaultToConfig2,
-    onDownloadProgress: defaultToConfig2,
-    decompress: defaultToConfig2,
-    maxContentLength: defaultToConfig2,
-    maxBodyLength: defaultToConfig2,
-    beforeRedirect: defaultToConfig2,
-    transport: defaultToConfig2,
-    httpAgent: defaultToConfig2,
-    httpsAgent: defaultToConfig2,
-    cancelToken: defaultToConfig2,
-    socketPath: defaultToConfig2,
-    responseEncoding: defaultToConfig2,
-    validateStatus: mergeDirectKeys,
-    headers: (a, b , prop) => mergeDeepProperties(headersToObject(a), headersToObject(b),prop, true)
-  };
-
-  utils$1.forEach(Object.keys(Object.assign({}, config1, config2)), function computeConfigValue(prop) {
-    const merge = mergeMap[prop] || mergeDeepProperties;
-    const configValue = merge(config1[prop], config2[prop], prop);
-    (utils$1.isUndefined(configValue) && merge !== mergeDirectKeys) || (config[prop] = configValue);
-  });
-
-  return config;
-}
-
-const resolveConfig = (config) => {
-  const newConfig = mergeConfig({}, config);
-
-  let {data, withXSRFToken, xsrfHeaderName, xsrfCookieName, headers, auth} = newConfig;
-
-  newConfig.headers = headers = AxiosHeaders$1.from(headers);
-
-  newConfig.url = buildURL(buildFullPath(newConfig.baseURL, newConfig.url), config.params, config.paramsSerializer);
-
-  // HTTP basic authentication
-  if (auth) {
-    headers.set('Authorization', 'Basic ' +
-      btoa((auth.username || '') + ':' + (auth.password ? unescape(encodeURIComponent(auth.password)) : ''))
-    );
-  }
-
-  let contentType;
-
-  if (utils$1.isFormData(data)) {
-    if (platform.hasStandardBrowserEnv || platform.hasStandardBrowserWebWorkerEnv) {
-      headers.setContentType(undefined); // Let the browser set it
-    } else if ((contentType = headers.getContentType()) !== false) {
-      // fix semicolon duplication issue for ReactNative FormData implementation
-      const [type, ...tokens] = contentType ? contentType.split(';').map(token => token.trim()).filter(Boolean) : [];
-      headers.setContentType([type || 'multipart/form-data', ...tokens].join('; '));
-    }
-  }
-
-  // Add xsrf header
-  // This is only done if running in a standard browser environment.
-  // Specifically not if we're in a web worker, or react-native.
-
-  if (platform.hasStandardBrowserEnv) {
-    withXSRFToken && utils$1.isFunction(withXSRFToken) && (withXSRFToken = withXSRFToken(newConfig));
-
-    if (withXSRFToken || (withXSRFToken !== false && isURLSameOrigin(newConfig.url))) {
-      // Add xsrf header
-      const xsrfValue = xsrfHeaderName && xsrfCookieName && cookies.read(xsrfCookieName);
-
-      if (xsrfValue) {
-        headers.set(xsrfHeaderName, xsrfValue);
+      if (msie) {
+        // IE needs attribute set twice to normalize properties
+        urlParsingNode.setAttribute('href', href);
+        href = urlParsingNode.href;
       }
-    }
-  }
 
-  return newConfig;
-};
+      urlParsingNode.setAttribute('href', href);
+
+      // urlParsingNode provides the UrlUtils interface - http://url.spec.whatwg.org/#urlutils
+      return {
+        href: urlParsingNode.href,
+        protocol: urlParsingNode.protocol ? urlParsingNode.protocol.replace(/:$/, '') : '',
+        host: urlParsingNode.host,
+        search: urlParsingNode.search ? urlParsingNode.search.replace(/^\?/, '') : '',
+        hash: urlParsingNode.hash ? urlParsingNode.hash.replace(/^#/, '') : '',
+        hostname: urlParsingNode.hostname,
+        port: urlParsingNode.port,
+        pathname: (urlParsingNode.pathname.charAt(0) === '/') ?
+          urlParsingNode.pathname :
+          '/' + urlParsingNode.pathname
+      };
+    }
+
+    originURL = resolveURL(window.location.href);
+
+    /**
+    * Determine if a URL shares the same origin as the current location
+    *
+    * @param {String} requestURL The URL to test
+    * @returns {boolean} True if URL shares the same origin, otherwise false
+    */
+    return function isURLSameOrigin(requestURL) {
+      const parsed = (utils$1.isString(requestURL)) ? resolveURL(requestURL) : requestURL;
+      return (parsed.protocol === originURL.protocol &&
+          parsed.host === originURL.host);
+    };
+  })() :
+
+  // Non standard browser envs (web workers, react-native) lack needed support.
+  (function nonStandardBrowserEnv() {
+    return function isURLSameOrigin() {
+      return true;
+    };
+  })();
+
+function progressEventReducer(listener, isDownloadStream) {
+  let bytesNotified = 0;
+  const _speedometer = speedometer(50, 250);
+
+  return e => {
+    const loaded = e.loaded;
+    const total = e.lengthComputable ? e.total : undefined;
+    const progressBytes = loaded - bytesNotified;
+    const rate = _speedometer(progressBytes);
+    const inRange = loaded <= total;
+
+    bytesNotified = loaded;
+
+    const data = {
+      loaded,
+      total,
+      progress: total ? (loaded / total) : undefined,
+      bytes: progressBytes,
+      rate: rate ? rate : undefined,
+      estimated: rate && total && inRange ? (total - loaded) / rate : undefined,
+      event: e
+    };
+
+    data[isDownloadStream ? 'download' : 'upload'] = true;
+
+    listener(data);
+  };
+}
 
 const isXHRAdapterSupported = typeof XMLHttpRequest !== 'undefined';
 
 const xhrAdapter = isXHRAdapterSupported && function (config) {
   return new Promise(function dispatchXhrRequest(resolve, reject) {
-    const _config = resolveConfig(config);
-    let requestData = _config.data;
-    const requestHeaders = AxiosHeaders$1.from(_config.headers).normalize();
-    let {responseType, onUploadProgress, onDownloadProgress} = _config;
+    let requestData = config.data;
+    const requestHeaders = AxiosHeaders$1.from(config.headers).normalize();
+    let {responseType, withXSRFToken} = config;
     let onCanceled;
-    let uploadThrottled, downloadThrottled;
-    let flushUpload, flushDownload;
-
     function done() {
-      flushUpload && flushUpload(); // flush events
-      flushDownload && flushDownload(); // flush events
+      if (config.cancelToken) {
+        config.cancelToken.unsubscribe(onCanceled);
+      }
 
-      _config.cancelToken && _config.cancelToken.unsubscribe(onCanceled);
+      if (config.signal) {
+        config.signal.removeEventListener('abort', onCanceled);
+      }
+    }
 
-      _config.signal && _config.signal.removeEventListener('abort', onCanceled);
+    let contentType;
+
+    if (utils$1.isFormData(requestData)) {
+      if (platform.hasStandardBrowserEnv || platform.hasStandardBrowserWebWorkerEnv) {
+        requestHeaders.setContentType(false); // Let the browser set it
+      } else if ((contentType = requestHeaders.getContentType()) !== false) {
+        // fix semicolon duplication issue for ReactNative FormData implementation
+        const [type, ...tokens] = contentType ? contentType.split(';').map(token => token.trim()).filter(Boolean) : [];
+        requestHeaders.setContentType([type || 'multipart/form-data', ...tokens].join('; '));
+      }
     }
 
     let request = new XMLHttpRequest();
 
-    request.open(_config.method.toUpperCase(), _config.url, true);
+    // HTTP basic authentication
+    if (config.auth) {
+      const username = config.auth.username || '';
+      const password = config.auth.password ? unescape(encodeURIComponent(config.auth.password)) : '';
+      requestHeaders.set('Authorization', 'Basic ' + btoa(username + ':' + password));
+    }
+
+    const fullPath = buildFullPath(config.baseURL, config.url);
+
+    request.open(config.method.toUpperCase(), buildURL(fullPath, config.params, config.paramsSerializer), true);
 
     // Set the request timeout in MS
-    request.timeout = _config.timeout;
+    request.timeout = config.timeout;
 
     function onloadend() {
       if (!request) {
@@ -46213,10 +45801,10 @@ const xhrAdapter = isXHRAdapterSupported && function (config) {
 
     // Handle timeout
     request.ontimeout = function handleTimeout() {
-      let timeoutErrorMessage = _config.timeout ? 'timeout of ' + _config.timeout + 'ms exceeded' : 'timeout exceeded';
-      const transitional = _config.transitional || transitionalDefaults;
-      if (_config.timeoutErrorMessage) {
-        timeoutErrorMessage = _config.timeoutErrorMessage;
+      let timeoutErrorMessage = config.timeout ? 'timeout of ' + config.timeout + 'ms exceeded' : 'timeout exceeded';
+      const transitional = config.transitional || transitionalDefaults;
+      if (config.timeoutErrorMessage) {
+        timeoutErrorMessage = config.timeoutErrorMessage;
       }
       reject(new AxiosError(
         timeoutErrorMessage,
@@ -46227,6 +45815,22 @@ const xhrAdapter = isXHRAdapterSupported && function (config) {
       // Clean up request
       request = null;
     };
+
+    // Add xsrf header
+    // This is only done if running in a standard browser environment.
+    // Specifically not if we're in a web worker, or react-native.
+    if(platform.hasStandardBrowserEnv) {
+      withXSRFToken && utils$1.isFunction(withXSRFToken) && (withXSRFToken = withXSRFToken(config));
+
+      if (withXSRFToken || (withXSRFToken !== false && isURLSameOrigin(fullPath))) {
+        // Add xsrf header
+        const xsrfValue = config.xsrfHeaderName && config.xsrfCookieName && cookies.read(config.xsrfCookieName);
+
+        if (xsrfValue) {
+          requestHeaders.set(config.xsrfHeaderName, xsrfValue);
+        }
+      }
+    }
 
     // Remove Content-Type if data is undefined
     requestData === undefined && requestHeaders.setContentType(null);
@@ -46239,31 +45843,26 @@ const xhrAdapter = isXHRAdapterSupported && function (config) {
     }
 
     // Add withCredentials to request if needed
-    if (!utils$1.isUndefined(_config.withCredentials)) {
-      request.withCredentials = !!_config.withCredentials;
+    if (!utils$1.isUndefined(config.withCredentials)) {
+      request.withCredentials = !!config.withCredentials;
     }
 
     // Add responseType to request if needed
     if (responseType && responseType !== 'json') {
-      request.responseType = _config.responseType;
+      request.responseType = config.responseType;
     }
 
     // Handle progress if needed
-    if (onDownloadProgress) {
-      ([downloadThrottled, flushDownload] = progressEventReducer(onDownloadProgress, true));
-      request.addEventListener('progress', downloadThrottled);
+    if (typeof config.onDownloadProgress === 'function') {
+      request.addEventListener('progress', progressEventReducer(config.onDownloadProgress, true));
     }
 
     // Not all browsers support upload events
-    if (onUploadProgress && request.upload) {
-      ([uploadThrottled, flushUpload] = progressEventReducer(onUploadProgress));
-
-      request.upload.addEventListener('progress', uploadThrottled);
-
-      request.upload.addEventListener('loadend', flushUpload);
+    if (typeof config.onUploadProgress === 'function' && request.upload) {
+      request.upload.addEventListener('progress', progressEventReducer(config.onUploadProgress));
     }
 
-    if (_config.cancelToken || _config.signal) {
+    if (config.cancelToken || config.signal) {
       // Handle cancellation
       // eslint-disable-next-line func-names
       onCanceled = cancel => {
@@ -46275,13 +45874,13 @@ const xhrAdapter = isXHRAdapterSupported && function (config) {
         request = null;
       };
 
-      _config.cancelToken && _config.cancelToken.subscribe(onCanceled);
-      if (_config.signal) {
-        _config.signal.aborted ? onCanceled() : _config.signal.addEventListener('abort', onCanceled);
+      config.cancelToken && config.cancelToken.subscribe(onCanceled);
+      if (config.signal) {
+        config.signal.aborted ? onCanceled() : config.signal.addEventListener('abort', onCanceled);
       }
     }
 
-    const protocol = parseProtocol(_config.url);
+    const protocol = parseProtocol(fullPath);
 
     if (protocol && platform.protocols.indexOf(protocol) === -1) {
       reject(new AxiosError('Unsupported protocol ' + protocol + ':', AxiosError.ERR_BAD_REQUEST, config));
@@ -46294,360 +45893,9 @@ const xhrAdapter = isXHRAdapterSupported && function (config) {
   });
 };
 
-const composeSignals = (signals, timeout) => {
-  const {length} = (signals = signals ? signals.filter(Boolean) : []);
-
-  if (timeout || length) {
-    let controller = new AbortController();
-
-    let aborted;
-
-    const onabort = function (reason) {
-      if (!aborted) {
-        aborted = true;
-        unsubscribe();
-        const err = reason instanceof Error ? reason : this.reason;
-        controller.abort(err instanceof AxiosError ? err : new CanceledError(err instanceof Error ? err.message : err));
-      }
-    };
-
-    let timer = timeout && setTimeout(() => {
-      timer = null;
-      onabort(new AxiosError(`timeout ${timeout} of ms exceeded`, AxiosError.ETIMEDOUT));
-    }, timeout);
-
-    const unsubscribe = () => {
-      if (signals) {
-        timer && clearTimeout(timer);
-        timer = null;
-        signals.forEach(signal => {
-          signal.unsubscribe ? signal.unsubscribe(onabort) : signal.removeEventListener('abort', onabort);
-        });
-        signals = null;
-      }
-    };
-
-    signals.forEach((signal) => signal.addEventListener('abort', onabort));
-
-    const {signal} = controller;
-
-    signal.unsubscribe = () => utils$1.asap(unsubscribe);
-
-    return signal;
-  }
-};
-
-const composeSignals$1 = composeSignals;
-
-const streamChunk = function* (chunk, chunkSize) {
-  let len = chunk.byteLength;
-
-  if (!chunkSize || len < chunkSize) {
-    yield chunk;
-    return;
-  }
-
-  let pos = 0;
-  let end;
-
-  while (pos < len) {
-    end = pos + chunkSize;
-    yield chunk.slice(pos, end);
-    pos = end;
-  }
-};
-
-const readBytes = async function* (iterable, chunkSize) {
-  for await (const chunk of readStream(iterable)) {
-    yield* streamChunk(chunk, chunkSize);
-  }
-};
-
-const readStream = async function* (stream) {
-  if (stream[Symbol.asyncIterator]) {
-    yield* stream;
-    return;
-  }
-
-  const reader = stream.getReader();
-  try {
-    for (;;) {
-      const {done, value} = await reader.read();
-      if (done) {
-        break;
-      }
-      yield value;
-    }
-  } finally {
-    await reader.cancel();
-  }
-};
-
-const trackStream = (stream, chunkSize, onProgress, onFinish) => {
-  const iterator = readBytes(stream, chunkSize);
-
-  let bytes = 0;
-  let done;
-  let _onFinish = (e) => {
-    if (!done) {
-      done = true;
-      onFinish && onFinish(e);
-    }
-  };
-
-  return new ReadableStream({
-    async pull(controller) {
-      try {
-        const {done, value} = await iterator.next();
-
-        if (done) {
-         _onFinish();
-          controller.close();
-          return;
-        }
-
-        let len = value.byteLength;
-        if (onProgress) {
-          let loadedBytes = bytes += len;
-          onProgress(loadedBytes);
-        }
-        controller.enqueue(new Uint8Array(value));
-      } catch (err) {
-        _onFinish(err);
-        throw err;
-      }
-    },
-    cancel(reason) {
-      _onFinish(reason);
-      return iterator.return();
-    }
-  }, {
-    highWaterMark: 2
-  })
-};
-
-const isFetchSupported = typeof fetch === 'function' && typeof Request === 'function' && typeof Response === 'function';
-const isReadableStreamSupported = isFetchSupported && typeof ReadableStream === 'function';
-
-// used only inside the fetch adapter
-const encodeText = isFetchSupported && (typeof TextEncoder === 'function' ?
-    ((encoder) => (str) => encoder.encode(str))(new TextEncoder()) :
-    async (str) => new Uint8Array(await new Response(str).arrayBuffer())
-);
-
-const test = (fn, ...args) => {
-  try {
-    return !!fn(...args);
-  } catch (e) {
-    return false
-  }
-};
-
-const supportsRequestStream = isReadableStreamSupported && test(() => {
-  let duplexAccessed = false;
-
-  const hasContentType = new Request(platform.origin, {
-    body: new ReadableStream(),
-    method: 'POST',
-    get duplex() {
-      duplexAccessed = true;
-      return 'half';
-    },
-  }).headers.has('Content-Type');
-
-  return duplexAccessed && !hasContentType;
-});
-
-const DEFAULT_CHUNK_SIZE = 64 * 1024;
-
-const supportsResponseStream = isReadableStreamSupported &&
-  test(() => utils$1.isReadableStream(new Response('').body));
-
-
-const resolvers = {
-  stream: supportsResponseStream && ((res) => res.body)
-};
-
-isFetchSupported && (((res) => {
-  ['text', 'arrayBuffer', 'blob', 'formData', 'stream'].forEach(type => {
-    !resolvers[type] && (resolvers[type] = utils$1.isFunction(res[type]) ? (res) => res[type]() :
-      (_, config) => {
-        throw new AxiosError(`Response type '${type}' is not supported`, AxiosError.ERR_NOT_SUPPORT, config);
-      });
-  });
-})(new Response));
-
-const getBodyLength = async (body) => {
-  if (body == null) {
-    return 0;
-  }
-
-  if(utils$1.isBlob(body)) {
-    return body.size;
-  }
-
-  if(utils$1.isSpecCompliantForm(body)) {
-    const _request = new Request(platform.origin, {
-      method: 'POST',
-      body,
-    });
-    return (await _request.arrayBuffer()).byteLength;
-  }
-
-  if(utils$1.isArrayBufferView(body) || utils$1.isArrayBuffer(body)) {
-    return body.byteLength;
-  }
-
-  if(utils$1.isURLSearchParams(body)) {
-    body = body + '';
-  }
-
-  if(utils$1.isString(body)) {
-    return (await encodeText(body)).byteLength;
-  }
-};
-
-const resolveBodyLength = async (headers, body) => {
-  const length = utils$1.toFiniteNumber(headers.getContentLength());
-
-  return length == null ? getBodyLength(body) : length;
-};
-
-const fetchAdapter = isFetchSupported && (async (config) => {
-  let {
-    url,
-    method,
-    data,
-    signal,
-    cancelToken,
-    timeout,
-    onDownloadProgress,
-    onUploadProgress,
-    responseType,
-    headers,
-    withCredentials = 'same-origin',
-    fetchOptions
-  } = resolveConfig(config);
-
-  responseType = responseType ? (responseType + '').toLowerCase() : 'text';
-
-  let composedSignal = composeSignals$1([signal, cancelToken && cancelToken.toAbortSignal()], timeout);
-
-  let request;
-
-  const unsubscribe = composedSignal && composedSignal.unsubscribe && (() => {
-      composedSignal.unsubscribe();
-  });
-
-  let requestContentLength;
-
-  try {
-    if (
-      onUploadProgress && supportsRequestStream && method !== 'get' && method !== 'head' &&
-      (requestContentLength = await resolveBodyLength(headers, data)) !== 0
-    ) {
-      let _request = new Request(url, {
-        method: 'POST',
-        body: data,
-        duplex: "half"
-      });
-
-      let contentTypeHeader;
-
-      if (utils$1.isFormData(data) && (contentTypeHeader = _request.headers.get('content-type'))) {
-        headers.setContentType(contentTypeHeader);
-      }
-
-      if (_request.body) {
-        const [onProgress, flush] = progressEventDecorator(
-          requestContentLength,
-          progressEventReducer(asyncDecorator(onUploadProgress))
-        );
-
-        data = trackStream(_request.body, DEFAULT_CHUNK_SIZE, onProgress, flush);
-      }
-    }
-
-    if (!utils$1.isString(withCredentials)) {
-      withCredentials = withCredentials ? 'include' : 'omit';
-    }
-
-    // Cloudflare Workers throws when credentials are defined
-    // see https://github.com/cloudflare/workerd/issues/902
-    const isCredentialsSupported = "credentials" in Request.prototype;
-    request = new Request(url, {
-      ...fetchOptions,
-      signal: composedSignal,
-      method: method.toUpperCase(),
-      headers: headers.normalize().toJSON(),
-      body: data,
-      duplex: "half",
-      credentials: isCredentialsSupported ? withCredentials : undefined
-    });
-
-    let response = await fetch(request);
-
-    const isStreamResponse = supportsResponseStream && (responseType === 'stream' || responseType === 'response');
-
-    if (supportsResponseStream && (onDownloadProgress || (isStreamResponse && unsubscribe))) {
-      const options = {};
-
-      ['status', 'statusText', 'headers'].forEach(prop => {
-        options[prop] = response[prop];
-      });
-
-      const responseContentLength = utils$1.toFiniteNumber(response.headers.get('content-length'));
-
-      const [onProgress, flush] = onDownloadProgress && progressEventDecorator(
-        responseContentLength,
-        progressEventReducer(asyncDecorator(onDownloadProgress), true)
-      ) || [];
-
-      response = new Response(
-        trackStream(response.body, DEFAULT_CHUNK_SIZE, onProgress, () => {
-          flush && flush();
-          unsubscribe && unsubscribe();
-        }),
-        options
-      );
-    }
-
-    responseType = responseType || 'text';
-
-    let responseData = await resolvers[utils$1.findKey(resolvers, responseType) || 'text'](response, config);
-
-    !isStreamResponse && unsubscribe && unsubscribe();
-
-    return await new Promise((resolve, reject) => {
-      settle(resolve, reject, {
-        data: responseData,
-        headers: AxiosHeaders$1.from(response.headers),
-        status: response.status,
-        statusText: response.statusText,
-        config,
-        request
-      });
-    })
-  } catch (err) {
-    unsubscribe && unsubscribe();
-
-    if (err && err.name === 'TypeError' && /fetch/i.test(err.message)) {
-      throw Object.assign(
-        new AxiosError('Network Error', AxiosError.ERR_NETWORK, config, request),
-        {
-          cause: err.cause || err
-        }
-      )
-    }
-
-    throw AxiosError.from(err, err && err.code, config, request);
-  }
-});
-
 const knownAdapters = {
   http: httpAdapter,
-  xhr: xhrAdapter,
-  fetch: fetchAdapter
+  xhr: xhrAdapter
 };
 
 utils$1.forEach(knownAdapters, (fn, value) => {
@@ -46791,6 +46039,108 @@ function dispatchRequest(config) {
   });
 }
 
+const headersToObject = (thing) => thing instanceof AxiosHeaders$1 ? thing.toJSON() : thing;
+
+/**
+ * Config-specific merge-function which creates a new config-object
+ * by merging two configuration objects together.
+ *
+ * @param {Object} config1
+ * @param {Object} config2
+ *
+ * @returns {Object} New object resulting from merging config2 to config1
+ */
+function mergeConfig(config1, config2) {
+  // eslint-disable-next-line no-param-reassign
+  config2 = config2 || {};
+  const config = {};
+
+  function getMergedValue(target, source, caseless) {
+    if (utils$1.isPlainObject(target) && utils$1.isPlainObject(source)) {
+      return utils$1.merge.call({caseless}, target, source);
+    } else if (utils$1.isPlainObject(source)) {
+      return utils$1.merge({}, source);
+    } else if (utils$1.isArray(source)) {
+      return source.slice();
+    }
+    return source;
+  }
+
+  // eslint-disable-next-line consistent-return
+  function mergeDeepProperties(a, b, caseless) {
+    if (!utils$1.isUndefined(b)) {
+      return getMergedValue(a, b, caseless);
+    } else if (!utils$1.isUndefined(a)) {
+      return getMergedValue(undefined, a, caseless);
+    }
+  }
+
+  // eslint-disable-next-line consistent-return
+  function valueFromConfig2(a, b) {
+    if (!utils$1.isUndefined(b)) {
+      return getMergedValue(undefined, b);
+    }
+  }
+
+  // eslint-disable-next-line consistent-return
+  function defaultToConfig2(a, b) {
+    if (!utils$1.isUndefined(b)) {
+      return getMergedValue(undefined, b);
+    } else if (!utils$1.isUndefined(a)) {
+      return getMergedValue(undefined, a);
+    }
+  }
+
+  // eslint-disable-next-line consistent-return
+  function mergeDirectKeys(a, b, prop) {
+    if (prop in config2) {
+      return getMergedValue(a, b);
+    } else if (prop in config1) {
+      return getMergedValue(undefined, a);
+    }
+  }
+
+  const mergeMap = {
+    url: valueFromConfig2,
+    method: valueFromConfig2,
+    data: valueFromConfig2,
+    baseURL: defaultToConfig2,
+    transformRequest: defaultToConfig2,
+    transformResponse: defaultToConfig2,
+    paramsSerializer: defaultToConfig2,
+    timeout: defaultToConfig2,
+    timeoutMessage: defaultToConfig2,
+    withCredentials: defaultToConfig2,
+    withXSRFToken: defaultToConfig2,
+    adapter: defaultToConfig2,
+    responseType: defaultToConfig2,
+    xsrfCookieName: defaultToConfig2,
+    xsrfHeaderName: defaultToConfig2,
+    onUploadProgress: defaultToConfig2,
+    onDownloadProgress: defaultToConfig2,
+    decompress: defaultToConfig2,
+    maxContentLength: defaultToConfig2,
+    maxBodyLength: defaultToConfig2,
+    beforeRedirect: defaultToConfig2,
+    transport: defaultToConfig2,
+    httpAgent: defaultToConfig2,
+    httpsAgent: defaultToConfig2,
+    cancelToken: defaultToConfig2,
+    socketPath: defaultToConfig2,
+    responseEncoding: defaultToConfig2,
+    validateStatus: mergeDirectKeys,
+    headers: (a, b) => mergeDeepProperties(headersToObject(a), headersToObject(b), true)
+  };
+
+  utils$1.forEach(Object.keys(Object.assign({}, config1, config2)), function computeConfigValue(prop) {
+    const merge = mergeMap[prop] || mergeDeepProperties;
+    const configValue = merge(config1[prop], config2[prop], prop);
+    (utils$1.isUndefined(configValue) && merge !== mergeDirectKeys) || (config[prop] = configValue);
+  });
+
+  return config;
+}
+
 const validators$1 = {};
 
 // eslint-disable-next-line func-names
@@ -46838,14 +46188,6 @@ validators$1.transitional = function transitional(validator, version, message) {
 
     return validator ? validator(value, opt, opts) : true;
   };
-};
-
-validators$1.spelling = function spelling(correctSpelling) {
-  return (value, opt) => {
-    // eslint-disable-next-line no-console
-    console.warn(`${opt} is likely a misspelling of ${correctSpelling}`);
-    return true;
-  }
 };
 
 /**
@@ -46917,21 +46259,18 @@ class Axios {
       return await this._request(configOrUrl, config);
     } catch (err) {
       if (err instanceof Error) {
-        let dummy = {};
+        let dummy;
 
-        Error.captureStackTrace ? Error.captureStackTrace(dummy) : (dummy = new Error());
+        Error.captureStackTrace ? Error.captureStackTrace(dummy = {}) : (dummy = new Error());
 
         // slice off the Error: ... line
         const stack = dummy.stack ? dummy.stack.replace(/^.+\n/, '') : '';
-        try {
-          if (!err.stack) {
-            err.stack = stack;
-            // match without the 2 top stack lines
-          } else if (stack && !String(err.stack).endsWith(stack.replace(/^.+\n.+\n/, ''))) {
-            err.stack += '\n' + stack;
-          }
-        } catch (e) {
-          // ignore the case where "stack" is an un-writable property
+
+        if (!err.stack) {
+          err.stack = stack;
+          // match without the 2 top stack lines
+        } else if (stack && !String(err.stack).endsWith(stack.replace(/^.+\n.+\n/, ''))) {
+          err.stack += '\n' + stack;
         }
       }
 
@@ -46973,11 +46312,6 @@ class Axios {
         }, true);
       }
     }
-
-    validator.assertOptions(config, {
-      baseUrl: validators.spelling('baseURL'),
-      withXsrfToken: validators.spelling('withXSRFToken')
-    }, true);
 
     // Set config.method
     config.method = (config.method || this.defaults.method || 'get').toLowerCase();
@@ -47207,20 +46541,6 @@ class CancelToken {
     if (index !== -1) {
       this._listeners.splice(index, 1);
     }
-  }
-
-  toAbortSignal() {
-    const controller = new AbortController();
-
-    const abort = (err) => {
-      controller.abort(err);
-    };
-
-    this.subscribe(abort);
-
-    controller.signal.unsubscribe = () => this.unsubscribe(abort);
-
-    return controller.signal;
   }
 
   /**
