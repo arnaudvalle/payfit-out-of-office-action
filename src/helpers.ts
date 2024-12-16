@@ -1,4 +1,4 @@
-import { CalendarComponent, VEvent } from "node-ical";
+import { CalendarComponent, DateWithTimeZone, VEvent } from "node-ical";
 import * as core from "@actions/core";
 
 const PREFIX = "Absence - ";
@@ -17,8 +17,9 @@ export const getEventsForEmployees = (
   const allowedSummaries = employeeNames.map(
     (fullname) => `${PREFIX}${fullname}`,
   );
-  const today = new Date().setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today + 24 * 60 * 60 * 1000).setHours(0, 0, 0, 0);
+  const now = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate()));
+  const today = now.getTime();
+  const tomorrow = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate() + 1)).getTime();
 
   return events.filter(({ summary, start, end }) => {
     // Only keep the events of the selected employees that start today or end tomorrow
@@ -55,3 +56,16 @@ export const getEmployeesFromEvents = (employeeEvents: VEvent[]) => {
 
   return outOfOfficeEmployees;
 };
+
+/**
+ * Adjust the event times to UTC.
+ */
+export const adjustEventTimesToUTC = (events: VEvent[]) => {
+  return events.map(event => {
+    return {
+      ...event,
+      start: new Date(Date.UTC(event.start.getFullYear(), event.start.getMonth(), event.start.getDate())) as DateWithTimeZone,
+      end: new Date(Date.UTC(event.end.getFullYear(), event.end.getMonth(), event.end.getDate())) as DateWithTimeZone,
+    }
+  })
+}
