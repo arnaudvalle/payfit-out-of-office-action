@@ -19,7 +19,8 @@
     "strict": true /* Enable all strict type-checking options. */,
     "noImplicitAny": true /* Enable error reporting for expressions and declarations with an implied 'any' type. */,
     /* Completeness */
-    "skipLibCheck": true /* Skip type checking all .d.ts files. */
+    "skipLibCheck": true /* Skip type checking all .d.ts files. */,
+    "isolatedModules": true
   },
   "include": ["src/**/*.ts"],
   "exclude": ["./dist", "./node_modules", "./__tests__"]
