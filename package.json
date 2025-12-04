@@ -32,6 +32,6 @@
   },
   "dependencies": {
     "@actions/core": "^1.11.1",
-    "node-ical": "^0.20.1"
+    "node-ical": "^0.22.1"
   }
 }
