@@ -22,16 +22,19 @@
   "author": "arnaudvalle",
   "license": "ISC",
   "devDependencies": {
-    "@types/jest": "^29.5.12",
-    "@types/node": "^20.12.2",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^24.10.1",
     "@vercel/ncc": "^0.38.1",
-    "jest": "^29.7.0",
-    "ts-jest": "^29.1.5",
+    "jest": "^30.2.0",
+    "ts-jest": "^29.4.6",
     "ts-node": "^10.9.2",
-    "typescript": "^5.4.3"
+    "typescript": "^5.9.3"
   },
   "dependencies": {
     "@actions/core": "^1.11.1",
-    "node-ical": "^0.20.1"
+    "node-ical": "^0.22.1"
+  },
+  "overrides": {
+    "undici": "5.29.0"
   }
 }
