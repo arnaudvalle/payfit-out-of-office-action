@@ -35,6 +35,6 @@
     "node-ical": "^0.22.1"
   },
   "overrides": {
-    "undici": "5.29.0"
+    "undici": "6.23.0"
   }
 }
