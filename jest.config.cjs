@@ -3,9 +3,8 @@
  * https://jestjs.io/docs/configuration
  */
 
-import type { Config } from "jest";
-
-const config: Config = {
+/** @type {import("jest").Config} */
+module.exports = {
   // All imported modules in your tests should be mocked automatically
   // automock: false,
 
@@ -80,7 +79,11 @@ const config: Config = {
   // An array of file extensions your modules use
   moduleFileExtensions: ["js", "ts"],
 
+  // A map from regular expressions to module names or to arrays of module names that allow to stub out resources with a single module
   moduleNameMapper: {
+    // TypeScript NodeNext emits `./foo.js` specifiers; map to `./foo` so ts-jest resolves the `.ts` source
+    "^(\\.{1,2}/.*)\\.js$": "$1",
+    // @actions/core v3 is ESM-only; Jest resolves it to a local mock so tests can spy on getInput / setOutput / etc.
     "^@actions/core$": "<rootDir>/__tests__/mocks/actions-core.mock.ts",
   },
 
@@ -184,5 +187,3 @@ const config: Config = {
   // Whether to use watchman for file crawling
   // watchman: true,
 };
-
-export default config;

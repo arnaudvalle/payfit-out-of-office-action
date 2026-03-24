@@ -12,4 +12,4 @@ outputs:
     description: "List of full names that are out of office today (out of those passed in `inputs.names`)"
 runs:
   using: "node20"
-  main: "dist/index.js"
+  main: "dist/index.mjs"
