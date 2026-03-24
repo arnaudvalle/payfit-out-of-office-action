@@ -2,8 +2,6 @@ import * as core from "@actions/core";
 import * as main from "../src/index";
 import * as helpers from "../src/helpers";
 
-// jest.mock("@actions/core");
-
 // Mock the GitHub Actions core library
 let getInputMock: jest.SpiedFunction<typeof core.getInput>;
 let setFailedMock: jest.SpiedFunction<typeof core.setFailed>;
