@@ -13,7 +13,7 @@
     "test:watch": "jest --watch",
     "format:write": "npx prettier --write .",
     "format:check": "npx prettier --check .",
-    "package": "esbuild src/index.ts --bundle --platform=node --format=esm --sourcemap --outfile=dist/index.mjs",
+    "package": "node scripts/esbuild-action.mjs",
     "bundle": "npm run format:write && npm run package"
   },
   "exports": {
