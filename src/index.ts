@@ -1,6 +1,6 @@
 import { VEvent, async as icalAsync, sync as icalSync } from "node-ical";
 import * as core from "@actions/core";
-import { adjustEventTimesToUTC, getEmployeesFromEvents, getEventsForEmployees } from "./helpers";
+import { adjustEventTimesToUTC, getEmployeesFromEvents, getEventsForEmployees } from "./helpers.js";
 
 export async function run(): Promise<void> {
   try {
