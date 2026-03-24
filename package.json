@@ -31,10 +31,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@actions/core": "^1.11.1",
+    "@actions/core": "^3.0.0",
     "node-ical": "^0.22.1"
-  },
-  "overrides": {
-    "undici": "6.23.0"
   }
 }
