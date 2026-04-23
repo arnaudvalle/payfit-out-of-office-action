@@ -50,3 +50,6 @@ jobs:
 
       - name: Run tests
         run: npm run test
+
+      - name: Bundle check (ncc + dist runtime)
+        run: npm run test:bundle
