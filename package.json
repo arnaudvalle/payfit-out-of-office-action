@@ -9,9 +9,9 @@
   "scripts": {
     "build": "tsc",
     "dev": "node --env-file=.env --watch -r ts-node/register src/index.ts -- names='Ciri OF CINTRA,Jaskier DANDELION'",
-    "test": "jest",
+    "test": "vitest run",
     "test:bundle": "node scripts/bundle-check.mjs",
-    "test:watch": "jest --watch",
+    "test:watch": "vitest",
     "format:write": "npx prettier --write .",
     "format:check": "npx prettier --check .",
     "package": "npx ncc build src/index.ts -o dist --source-map --license licenses.txt",
@@ -23,13 +23,11 @@
   "author": "arnaudvalle",
   "license": "ISC",
   "devDependencies": {
-    "@types/jest": "^30.0.0",
     "@types/node": "^24.10.1",
     "@vercel/ncc": "^0.38.1",
-    "jest": "^30.2.0",
-    "ts-jest": "^29.4.6",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.0"
   },
   "dependencies": {
     "@actions/core": "^1.11.1",
