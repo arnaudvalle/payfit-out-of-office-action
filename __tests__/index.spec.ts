@@ -1,33 +1,25 @@
 import * as core from "@actions/core";
+import { beforeEach, describe, expect, it, type MockInstance, vi,
+} from "vitest";
 import * as main from "../src/index";
 import * as helpers from "../src/helpers";
 
-// jest.mock("@actions/core");
-
-// Mock the GitHub Actions core library
-let getInputMock: jest.SpiedFunction<typeof core.getInput>;
-let setFailedMock: jest.SpiedFunction<typeof core.setFailed>;
-let setOutputMock: jest.SpiedFunction<typeof core.setOutput>;
-let getEventsForEmployeesMock: jest.SpiedFunction<
-  typeof helpers.getEventsForEmployees
->;
-let getEmployeesFromEventsMock: jest.SpiedFunction<
-  typeof helpers.getEmployeesFromEvents
->;
-
 describe("action", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
+  let getInputMock: MockInstance<typeof core.getInput>;
+  let setFailedMock: MockInstance<typeof core.setFailed>;
+  let setOutputMock: MockInstance<typeof core.setOutput>;
+  let getEventsForEmployeesMock: MockInstance<typeof helpers.getEventsForEmployees>;
+  let getEmployeesFromEventsMock: MockInstance<typeof helpers.getEmployeesFromEvents>;
 
-    getInputMock = jest.spyOn(core, "getInput").mockImplementation();
-    setFailedMock = jest.spyOn(core, "setFailed").mockImplementation();
-    setOutputMock = jest.spyOn(core, "setOutput").mockImplementation();
-    getEventsForEmployeesMock = jest
-      .spyOn(helpers, "getEventsForEmployees")
-      .mockImplementation();
-    getEmployeesFromEventsMock = jest
-      .spyOn(helpers, "getEmployeesFromEvents")
-      .mockImplementation();
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    // Mock the GitHub Actions core library
+    getInputMock = vi.spyOn(core, "getInput").mockImplementation(() => "");
+    setFailedMock = vi.spyOn(core, "setFailed").mockImplementation(() => {});
+    setOutputMock = vi.spyOn(core, "setOutput").mockImplementation(() => {});
+    getEventsForEmployeesMock = vi.spyOn(helpers, "getEventsForEmployees").mockImplementation(() => []);
+    getEmployeesFromEventsMock = vi.spyOn(helpers, "getEmployeesFromEvents").mockImplementation(() => []);
   });
 
   it("errors if calendar_url is missing", async () => {
