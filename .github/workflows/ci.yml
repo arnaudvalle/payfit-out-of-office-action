@@ -51,5 +51,5 @@ jobs:
       - name: Run tests
         run: npm run test
 
-      - name: Bundle check (ncc + dist runtime)
+      - name: Bundle check (esbuild + dist runtime)
         run: npm run test:bundle
