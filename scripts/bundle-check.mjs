@@ -1,7 +1,7 @@
 /**
  * This script replicates what GitHub Actions does when running a workflow:
- * 
- * - builds the action with ncc
+ *
+ * - builds the action with esbuild (`npm run package`)
  * - runs dist/index.js with environment variables:
  *   - NODE_ENV=test
  *   - INPUT_* 
@@ -19,7 +19,7 @@ const repoRoot = join(fileURLToPath(new URL(".", import.meta.url)), "..");
 
 process.chdir(repoRoot);
 
-// Build the action with ncc
+// Build the action (esbuild bundle)
 execSync("npm run package", { stdio: "inherit", cwd: repoRoot });
 
 // Create a temporary directory for the github output

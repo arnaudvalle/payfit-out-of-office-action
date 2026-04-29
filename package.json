@@ -14,7 +14,7 @@
     "test:watch": "vitest",
     "format:write": "npx prettier --write .",
     "format:check": "npx prettier --check .",
-    "package": "npx ncc build src/index.ts -o dist --source-map --license licenses.txt",
+    "package": "rm -rf dist && esbuild src/index.ts --bundle --platform=node --format=cjs --target=node20 --outfile=dist/index.js --sourcemap",
     "bundle": "npm run format:write && npm run package"
   },
   "exports": {
@@ -24,7 +24,7 @@
   "license": "ISC",
   "devDependencies": {
     "@types/node": "^24.10.1",
-    "@vercel/ncc": "^0.38.1",
+    "esbuild": "^0.25.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
     "vitest": "^3.2.0"
