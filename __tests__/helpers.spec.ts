@@ -1,6 +1,9 @@
 import { VEvent, sync as icalSync } from "node-ical";
-import * as core from "@actions/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("@actions/core");
+
+import * as core from "@actions/core";
 import {
   adjustEventTimesToUTC,
   getEmployeesFromEvents,
@@ -57,7 +60,7 @@ past.setDate(today.getDate() - 7);
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.spyOn(core, "info").mockImplementation(() => {});
+  vi.mocked(core.info).mockImplementation(() => {});
 });
 
 describe("getEventsForEmployees", () => {

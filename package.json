@@ -30,7 +30,7 @@
     "vitest": "^3.2.0"
   },
   "dependencies": {
-    "@actions/core": "^1.11.1",
+    "@actions/core": "^3.0.1",
     "node-ical": "^0.22.1"
   },
   "overrides": {
