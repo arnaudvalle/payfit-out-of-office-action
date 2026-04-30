@@ -3,7 +3,7 @@
     "node": ">=20"
   },
   "name": "payfit-out-of-office-action",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Payfit out-of-office GitHub Action",
   "main": "src/index.ts",
   "scripts": {
