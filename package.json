@@ -3,7 +3,7 @@
     "node": ">=20"
   },
   "name": "payfit-out-of-office-action",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Payfit out-of-office GitHub Action",
   "main": "src/index.ts",
   "scripts": {
@@ -30,10 +30,7 @@
     "vitest": "^3.2.0"
   },
   "dependencies": {
-    "@actions/core": "^1.11.1",
+    "@actions/core": "^3.0.1",
     "node-ical": "^0.22.1"
-  },
-  "overrides": {
-    "undici": "6.23.0"
   }
 }
