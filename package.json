@@ -27,7 +27,7 @@
     "esbuild": "^0.25.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
-    "vitest": "^3.2.0"
+    "vitest": "^3.2.6"
   },
   "dependencies": {
     "@actions/core": "^3.0.1",
