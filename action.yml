@@ -11,5 +11,5 @@ outputs:
   names:
     description: "List of full names that are out of office today (out of those passed in `inputs.names`)"
 runs:
-  using: "node20"
+  using: "node24"
   main: "dist/index.js"
