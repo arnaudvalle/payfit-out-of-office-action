@@ -1,6 +1,6 @@
 {
   "engines": {
-    "node": ">=20"
+    "node": ">=24"
   },
   "name": "payfit-out-of-office-action",
   "version": "0.1.0",
@@ -13,7 +13,7 @@
     "test:watch": "vitest",
     "format:write": "npx prettier --write .",
     "format:check": "npx prettier --check .",
-    "package": "rm -rf dist && esbuild src/index.ts --bundle --platform=node --format=cjs --target=node20 --outfile=dist/index.js --sourcemap",
+    "package": "rm -rf dist && esbuild src/index.ts --bundle --platform=node --format=cjs --target=node24 --outfile=dist/index.js --sourcemap",
     "bundle": "npm run format:write && npm run package"
   },
   "exports": {
